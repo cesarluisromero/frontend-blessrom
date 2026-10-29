@@ -6,6 +6,7 @@ import { firstValueFrom } from 'rxjs';
 import { describe,it,expect,vi,afterEach } from 'vitest';
 import { AuthService,authInterceptor,adminGuard } from './auth';
 import { Products } from './products';
+import { Orders } from './orders';
 import { NgForm } from '@angular/forms';
 describe('Authentication boundary',()=>{
  afterEach(()=>TestBed.resetTestingModule());
@@ -42,6 +43,28 @@ describe('Authentication boundary',()=>{
  });
  it('allows an administrator',()=>{
   setup();expect(TestBed.runInInjectionContext(()=>adminGuard({} as never,{} as never))).toBe(true);
+ });
+});
+describe('Order lifecycle',()=>{
+ afterEach(()=>TestBed.resetTestingModule());
+ it('sends the current version and the next valid status',async()=>{
+  TestBed.configureTestingModule({providers:[provideHttpClient(),provideHttpClientTesting()]});
+  const page=TestBed.runInInjectionContext(()=>new Orders());
+  const controller=TestBed.inject(HttpTestingController);
+  controller.expectOne(r=>r.url==='/api/v1/admin/orders').flush({items:[],total:0,page:0,size:20});
+  controller.expectOne('/api/v1/admin/shipping-rates').flush([]);
+  await vi.waitFor(()=>expect(page.busy()).toBe(false));
+  page.selected.set({id:'order-1',version:4,status:'PAYMENT_CONFIRMED',currency:'PEN',subtotal:'10.00',shipping:'0.00',total:'10.00',customer:{recipient:'Cliente',email:'cliente@example.com',phone:'999999999',address:'Tarapoto',districtCode:'220901',districtName:'Tarapoto'},created_at:'2026-10-29T00:00:00Z',reservation_expires_at:'2026-10-29T01:00:00Z',items:[],history:[]});
+  const pending=page.advance();
+  const req=controller.expectOne('/api/v1/admin/orders/order-1/status');
+  expect(req.request.body).toEqual({version:4,status:'PREPARING'});
+  req.flush({...page.selected(),version:5,status:'PREPARING'});
+  let reload=controller.match(r=>r.url==='/api/v1/admin/orders');
+  await vi.waitFor(()=>{if(!reload.length)reload=controller.match(r=>r.url==='/api/v1/admin/orders');expect(reload.length).toBe(1);});
+  reload[0].flush({items:[],total:0,page:0,size:20});
+  await pending;
+  expect(page.selected()?.version).toBe(5);
+  expect(page.selected()?.status).toBe('PREPARING');controller.verify();
  });
 });
 describe('Draft publication',()=>{

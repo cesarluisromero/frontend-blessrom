@@ -10,7 +10,7 @@ export interface ShippingRate { id:string; version:number; district_code:string;
 export interface Quote { cartId:string; currency:'PEN'; items:CartLine[]; subtotal:string; shipping:string; total:string; fingerprint:string; districtName:string; }
 export interface Customer { recipient:string; email:string; phone:string; address:string; districtCode:string; districtName?:string; }
 export interface OrderLine { variant_id:string; sku:string; name:string; attributes:Record<string,string>; quantity:number; unit_price:string; line_total:string; }
-export interface Order { id:string; status:string; currency:'PEN'; subtotal:string; shipping:string; total:string; customer:Customer; created_at:string; reservation_expires_at:string; items:OrderLine[]; history:{status:string;actor:string;created_at:string}[]; }
+export interface Order { id:string; version:number; status:string; currency:'PEN'; subtotal:string; shipping:string; total:string; customer:Customer; created_at:string; reservation_expires_at:string; items:OrderLine[]; history:{status:string;actor:string;created_at:string}[]; }
 export const money = (value:string|number) => new Intl.NumberFormat('es-PE',{style:'currency',currency:'PEN'}).format(Number(value));
 export function safeImage(url:string|null|undefined):string|null {
  try { const parsed=new URL(url ?? ''); return parsed.protocol==='https:' ? parsed.href : null; } catch { return null; }
