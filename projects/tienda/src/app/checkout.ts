@@ -15,7 +15,7 @@ import {Quote,ShippingRate,errorMessage,money} from '../../../../shared/commerce
 <button type="button" class="secondary" [disabled]="!district" (click)="calculate()">Calcular total</button>
 @if(quote;as q){<section><p>Subtotal <strong>{{money(q.subtotal)}}</strong></p><p>Envío a {{q.districtName}} <strong>{{money(q.shipping)}}</strong></p><p>Total <strong>{{money(q.total)}}</strong></p></section>
 <label class="check"><input type="checkbox" name="confirmed" [(ngModel)]="confirmed">Confirmo los productos, la dirección y el total.</label>
-<button type="submit" [disabled]="form.invalid||!confirmed">Crear pedido</button><small>El stock quedará reservado durante 30 minutos. El pago en línea se incorporará posteriormente.</small>}
+<button type="submit" [disabled]="form.invalid||!confirmed">Crear pedido</button><small>El stock quedará reservado durante 30 minutos. En el siguiente paso registrarás el medio de pago.</small>}
 </fieldset></form><aside><h2>Resumen</h2>@for(i of cart.cart()?.items??[];track i.variantId){<p>{{i.quantity}} × {{i.name}} <strong>{{money(i.lineTotal||0)}}</strong></p>}</aside></div></main>`,styleUrl:'./checkout.scss'})
 export class Checkout {private http=inject(HttpClient);private router=inject(Router);readonly cart=inject(CartService);rates=signal<ShippingRate[]>([]);busy=signal(false);error=signal('');quote:Quote|null=null;recipient='';email='';phone='';address='';district='';confirmed=false;readonly money=money;
  constructor(){this.http.get<ShippingRate[]>('/api/v1/shipping-rates').subscribe({next:r=>this.rates.set(r),error:e=>this.error.set(errorMessage(e))});}

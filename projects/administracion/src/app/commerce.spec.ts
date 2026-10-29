@@ -54,7 +54,7 @@ describe('Order lifecycle',()=>{
   controller.expectOne(r=>r.url==='/api/v1/admin/orders').flush({items:[],total:0,page:0,size:20});
   controller.expectOne('/api/v1/admin/shipping-rates').flush([]);
   await vi.waitFor(()=>expect(page.busy()).toBe(false));
-  page.selected.set({id:'order-1',version:4,status:'PAYMENT_CONFIRMED',currency:'PEN',subtotal:'10.00',shipping:'0.00',total:'10.00',customer:{recipient:'Cliente',email:'cliente@example.com',phone:'999999999',address:'Tarapoto',districtCode:'220901',districtName:'Tarapoto'},created_at:'2026-10-29T00:00:00Z',reservation_expires_at:'2026-10-29T01:00:00Z',items:[],history:[]});
+  page.selected.set({id:'order-1',version:4,status:'PAYMENT_CONFIRMED',currency:'PEN',subtotal:'10.00',shipping:'0.00',total:'10.00',customer:{recipient:'Cliente',email:'cliente@example.com',phone:'999999999',address:'Tarapoto',districtCode:'220901',districtName:'Tarapoto'},created_at:'2026-10-29T00:00:00Z',reservation_expires_at:'2026-10-29T01:00:00Z',items:[],history:[],payment:null});
   const pending=page.advance();
   const req=controller.expectOne('/api/v1/admin/orders/order-1/status');
   expect(req.request.body).toEqual({version:4,status:'PREPARING'});
