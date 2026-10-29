@@ -1,0 +1,7 @@
+{
+  "/api/**": {
+    "target": "https://api.blessrom.com",
+    "secure": true,
+    "changeOrigin": true
+  }
+}

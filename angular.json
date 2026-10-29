@@ -1,0 +1,144 @@
+{
+  "cli": {
+    "analytics": false
+  },
+  "projects": {
+    "tienda": {
+      "sourceRoot": "projects/tienda/src",
+      "prefix": "app",
+      "architect": {
+        "serve": {
+          "builder": "@angular/build:dev-server",
+          "options": {
+            "proxyConfig": "proxy.conf.json",
+            "host": "127.0.0.1",
+            "port": 4200
+          },
+          "defaultConfiguration": "development",
+          "configurations": {
+            "development": {
+              "buildTarget": "tienda:build:development"
+            },
+            "production": {
+              "buildTarget": "tienda:build:production"
+            }
+          }
+        },
+        "build": {
+          "builder": "@angular/build:application",
+          "options": {
+            "index": "projects/tienda/src/index.html",
+            "tsConfig": "projects/tienda/tsconfig.app.json",
+            "styles": [
+              "projects/tienda/src/styles.scss"
+            ],
+            "inlineStyleLanguage": "scss",
+            "browser": "projects/tienda/src/main.ts",
+            "outputPath": "dist/tienda",
+            "assets": [
+              {
+                "glob": "**/*",
+                "input": "projects/tienda/public"
+              }
+            ]
+          },
+          "defaultConfiguration": "production",
+          "configurations": {
+            "development": {
+              "optimization": false,
+              "sourceMap": true,
+              "extractLicenses": false
+            },
+            "production": {
+              "outputHashing": "all",
+              "budgets": [
+                {
+                  "maximumWarning": "500kB",
+                  "type": "initial",
+                  "maximumError": "1MB"
+                },
+                {
+                  "maximumWarning": "8kB",
+                  "type": "anyComponentStyle",
+                  "maximumError": "12kB"
+                }
+              ]
+            }
+          }
+        }
+      },
+      "projectType": "application",
+      "root": "projects/tienda"
+    },
+    "administracion": {
+      "sourceRoot": "projects/administracion/src",
+      "prefix": "app",
+      "architect": {
+        "serve": {
+          "builder": "@angular/build:dev-server",
+          "options": {
+            "proxyConfig": "proxy.conf.json",
+            "host": "127.0.0.1",
+            "port": 4201
+          },
+          "defaultConfiguration": "development",
+          "configurations": {
+            "development": {
+              "buildTarget": "administracion:build:development"
+            },
+            "production": {
+              "buildTarget": "administracion:build:production"
+            }
+          }
+        },
+        "build": {
+          "builder": "@angular/build:application",
+          "options": {
+            "index": "projects/administracion/src/index.html",
+            "tsConfig": "projects/administracion/tsconfig.app.json",
+            "styles": [
+              "projects/administracion/src/styles.scss"
+            ],
+            "inlineStyleLanguage": "scss",
+            "browser": "projects/administracion/src/main.ts",
+            "outputPath": "dist/administracion",
+            "assets": [
+              {
+                "glob": "**/*",
+                "input": "projects/administracion/public"
+              }
+            ]
+          },
+          "defaultConfiguration": "production",
+          "configurations": {
+            "development": {
+              "optimization": false,
+              "sourceMap": true,
+              "extractLicenses": false
+            },
+            "production": {
+              "outputHashing": "all",
+              "budgets": [
+                {
+                  "maximumWarning": "500kB",
+                  "type": "initial",
+                  "maximumError": "1MB"
+                },
+                {
+                  "maximumWarning": "8kB",
+                  "type": "anyComponentStyle",
+                  "maximumError": "12kB"
+                }
+              ]
+            }
+          }
+        }
+      },
+      "projectType": "application",
+      "root": "projects/administracion"
+    }
+  },
+  "newProjectRoot": "projects",
+  "$schema": "./node_modules/@angular/cli/lib/config/schema.json",
+  "version": 1
+}

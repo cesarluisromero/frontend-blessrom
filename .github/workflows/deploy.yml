@@ -1,0 +1,105 @@
+name: Frontend CI and VPS deployment
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: frontend-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - name: Build both applications
+        run: npm run build
+      - name: Validate and package static release
+        run: |
+          set -euo pipefail
+          test -s dist/tienda/browser/index.html
+          test -s dist/administracion/browser/index.html
+          test -s dist/tienda/browser/blessrom-logo.webp
+          test -s dist/administracion/browser/blessrom-logo.webp
+          bash -n deploy/deploy.sh
+          bash -n deploy/prepare-vps.sh
+          mkdir -p release/tienda release/administracion
+          cp -a dist/tienda/browser/. release/tienda/
+          cp -a dist/administracion/browser/. release/administracion/
+          printf '{"commit":"%s"}\n' "$GITHUB_SHA" > release/tienda/deployment.json
+          cp release/tienda/deployment.json release/administracion/deployment.json
+          tar -czf frontend.tar.gz -C release tienda administracion
+          sha256sum frontend.tar.gz > frontend.tar.gz.sha256
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: frontend-release
+          path: |
+            frontend.tar.gz
+            frontend.tar.gz.sha256
+          retention-days: 14
+  deploy:
+    needs: build
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main' && vars.DEPLOY_ENABLED == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    environment: production
+    env:
+      VPS_HOST: ${{ secrets.VPS_HOST }}
+      VPS_PORT: ${{ secrets.VPS_PORT }}
+      VPS_USER: ${{ secrets.VPS_USER }}
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5
+        with:
+          name: frontend-release
+          path: artifact
+      - name: Configure SSH
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.VPS_SSH_KEY }}
+          SSH_KNOWN_HOSTS: ${{ secrets.VPS_KNOWN_HOSTS }}
+        run: |
+          set -euo pipefail
+          [[ "$VPS_HOST" =~ ^[a-zA-Z0-9][a-zA-Z0-9.-]*$ ]]
+          [[ "$VPS_USER" =~ ^[a-z_][a-z0-9_-]*$ ]]
+          [[ "$VPS_PORT" =~ ^[0-9]+$ ]]
+          test -n "$SSH_PRIVATE_KEY"
+          test -n "$SSH_KNOWN_HOSTS"
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/blessrom
+          printf '%s\n' "$SSH_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/blessrom ~/.ssh/known_hosts
+          cat > ~/.ssh/config <<EOF
+          Host blessrom-vps
+            HostName $VPS_HOST
+            User $VPS_USER
+            Port $VPS_PORT
+            IdentityFile ~/.ssh/blessrom
+            IdentitiesOnly yes
+            StrictHostKeyChecking yes
+            BatchMode yes
+            ConnectTimeout 15
+          EOF
+      - name: Upload and activate release
+        run: |
+          set -euo pipefail
+          cd artifact
+          sha256sum --check frontend.tar.gz.sha256
+          cd ..
+          RELEASE_ID="$GITHUB_SHA-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT"
+          ssh blessrom-vps "mkdir -p /var/www/blessrom-frontend/incoming/$RELEASE_ID"
+          scp artifact/frontend.tar.gz artifact/frontend.tar.gz.sha256 deploy/deploy.sh \
+            "blessrom-vps:/var/www/blessrom-frontend/incoming/$RELEASE_ID/"
+          ssh blessrom-vps \
+            "bash /var/www/blessrom-frontend/incoming/$RELEASE_ID/deploy.sh '$RELEASE_ID' '$GITHUB_SHA'"
+      - name: Remove runner SSH key
+        if: always()
+        run: rm -f ~/.ssh/blessrom

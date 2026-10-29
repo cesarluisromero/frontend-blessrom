@@ -1,0 +1,16 @@
+<div class="announcement">BLESSROM · Una nueva forma de vestir tu día</div>
+<header>
+ <a routerLink="/" class="brand" aria-label="Blessrom, inicio"><img src="/blessrom-logo.webp" alt="Blessrom C &amp; M" width="220" height="74"></a>
+ <nav aria-label="Navegación principal"><a routerLink="/">Inicio</a><a routerLink="/catalogo">Catálogo</a></nav>
+ <span class="muted">Perú · S/</span>
+</header>
+<router-outlet />
+<footer><a routerLink="/" class="brand"><img src="/blessrom-logo.webp" alt="Blessrom C &amp; M" width="220" height="74"></a><p>Estilo que nace entre la ciudad y la naturaleza.<br>Tarapoto, Perú.</p><small>Moda hoy. Nuevas posibilidades mañana.</small></footer>
+<button class="chat-trigger" (click)="chatOpen.set(true)" aria-label="Abrir asistente de Blessrom" [attr.aria-expanded]="chatOpen()">✧ Asistente</button>
+@if(chatOpen()) {
+ <aside class="chat" aria-label="Asistente de Blessrom">
+  <div class="chat-head"><div><strong>Blessrom · Asistente IA</strong><small>Tu próxima experiencia de compra</small></div><button (click)="chatOpen.set(false)" aria-label="Cerrar asistente">✕</button></div>
+  <div class="chat-content"><p class="bubble">¡Hola! Este será tu espacio para descubrir prendas y resolver dudas sobre tus compras.</p><p class="muted">El asistente está en preparación. Las recomendaciones por IA todavía no están disponibles.</p><a routerLink="/catalogo" (click)="chatOpen.set(false)">Explorar el catálogo →</a></div>
+  <div class="chat-input"><input aria-label="Mensaje al asistente" placeholder="Próximamente podrás escribir aquí" disabled><button disabled aria-label="Enviar mensaje">➤</button></div>
+ </aside>
+}
