@@ -8,7 +8,8 @@
     "start:admin": "ng serve administracion",
     "build": "npm run build:tienda && npm run build:admin",
     "build:tienda": "ng build tienda",
-    "build:admin": "ng build administracion"
+    "build:admin": "ng build administracion",
+    "test": "ng test administracion --watch=false"
   },
   "private": true,
   "packageManager": "npm@10.8.2",
@@ -20,14 +21,17 @@
     "@angular/platform-browser": "^22.2.0",
     "@angular/router": "^22.2.0",
     "rxjs": "~7.8.0",
-    "tslib": "^2.3.0"
+    "tslib": "^2.3.0",
+    "keycloak-js": "26.2.5"
   },
   "devDependencies": {
     "@angular/cli": "^22.2.5",
     "@angular/compiler-cli": "^22.2.0",
     "prettier": "^3.8.1",
     "typescript": "~6.0.2",
-    "@angular/build": "^22.2.5"
+    "@angular/build": "^22.2.5",
+    "vitest": "5.0.5",
+    "jsdom": "30.1.3"
   },
   "engines": {
     "node": "^24.15.0"

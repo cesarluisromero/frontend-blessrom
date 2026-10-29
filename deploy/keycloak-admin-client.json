@@ -1,0 +1,39 @@
+{
+  "clientId": "blessrom-admin",
+  "name": "Blessrom Administración",
+  "protocol": "openid-connect",
+  "enabled": true,
+  "publicClient": true,
+  "standardFlowEnabled": true,
+  "implicitFlowEnabled": false,
+  "directAccessGrantsEnabled": false,
+  "serviceAccountsEnabled": false,
+  "fullScopeAllowed": true,
+  "redirectUris": [
+    "https://admin.blessrom.com/",
+    "http://127.0.0.1:4201/",
+    "http://localhost:4201/"
+  ],
+  "webOrigins": [
+    "https://admin.blessrom.com",
+    "http://127.0.0.1:4201",
+    "http://localhost:4201"
+  ],
+  "attributes": {
+    "pkce.code.challenge.method": "S256",
+    "post.logout.redirect.uris": "https://admin.blessrom.com/login##http://127.0.0.1:4201/login##http://localhost:4201/login"
+  },
+  "protocolMappers": [
+    {
+      "name": "blessrom-backend-audience",
+      "protocol": "openid-connect",
+      "protocolMapper": "oidc-audience-mapper",
+      "consentRequired": false,
+      "config": {
+        "included.client.audience": "blessrom-backend",
+        "id.token.claim": "false",
+        "access.token.claim": "true"
+      }
+    }
+  ]
+}

@@ -132,6 +132,12 @@
               ]
             }
           }
+        },
+        "test": {
+          "builder": "@angular/build:unit-test",
+          "options": {
+            "tsConfig": "projects/administracion/tsconfig.spec.json"
+          }
         }
       },
       "projectType": "application",

@@ -1,0 +1,33 @@
+<main><p class="eyebrow">Catálogo / Administración</p><h1>Productos</h1>
+<p>Guarda tus cambios como borrador y publícalos cuando estén listos.</p>
+@if(error()){<p class="alert" role="alert">{{error()}} <button type="button" (click)="load()" [disabled]="busy()">Recargar lista</button></p>}
+@if(notice()){<p class="notice" role="status">{{notice()}}</p>}
+<div class="columns"><section><div class="row"><h2>Tu catálogo</h2><button type="button" (click)="newProduct(editor)" [disabled]="busy()">Nuevo</button></div>
+@if(!items().length){<p>{{busy()?'Cargando…':'Aún no hay productos.'}}</p>}
+@for(p of items();track p.id){<button class="product" type="button" (click)="open(p,editor)" [disabled]="busy()"><strong>{{name(p)}}</strong><small>{{state(p)}} · {{p.slug}}</small></button>}
+<div class="row"><button type="button" (click)="changePage(-1)" [disabled]="page===0||busy()">Anterior</button><span>{{page+1}} · {{total()}} productos</span><button type="button" (click)="changePage(1)" [disabled]="(page+1)*size>=total()||busy()">Siguiente</button></div>
+<details><summary>Crear categoría</summary><form #categoryForm="ngForm" (ngSubmit)="createCategory(categoryForm)">
+<label>Nombre<input name="categoryName" [(ngModel)]="categoryName" required maxlength="100"></label>
+<label>Identificador URL<input name="categorySlug" [(ngModel)]="categorySlug" required pattern="[a-z0-9]+(?:-[a-z0-9]+)*" maxlength="100" placeholder="ropa-mujer"></label>
+<button [disabled]="categoryForm.invalid||busy()">Crear categoría</button></form></details></section>
+<section><form #editor="ngForm" (ngSubmit)="save(editor)"><fieldset [disabled]="busy()"><h2>{{selected()?'Editar producto':'Nuevo producto'}}</h2>
+<label>Identificador URL<input name="slug" [(ngModel)]="slug" [readonly]="!!selected()" required maxlength="120" pattern="[a-z0-9]+(?:-[a-z0-9]+)*" placeholder="polo-algodon"></label>
+<label>Nombre<input name="name" [(ngModel)]="draft.name" required maxlength="180"></label>
+<label>Categoría<select name="category" [(ngModel)]="draft.categoryId" required><option value="">Seleccionar</option>@for(c of categories();track c.id){<option [value]="c.id">{{c.name}}</option>}</select></label>
+<label>Descripción<textarea name="description" [(ngModel)]="draft.description" maxlength="5000" rows="4"></textarea></label>
+<label>Imagen (URL HTTPS)<input name="image" [(ngModel)]="draft.imageUrl" type="url" pattern="https://[^\s]+" maxlength="2000" placeholder="https://..."></label><small>Usa una imagen alojada en un servicio de confianza. La subida de archivos aún no está disponible.</small>
+<h3>Variantes y precios</h3>
+@for(v of draft.variants;track $index;let i=$index){<div class="variant">
+<label>SKU<input [name]="'sku'+i" [(ngModel)]="v.sku" required pattern="[A-Za-z0-9_-]+" maxlength="80"></label>
+<label>Precio (S/)<input [name]="'price'+i" type="number" [(ngModel)]="v.price" required min="0.01" max="99999999.99" step="0.01"></label>
+<label>Talla<input [name]="'size'+i" [(ngModel)]="v.attributes['talla']" maxlength="100"></label>
+<label>Color<input [name]="'color'+i" [(ngModel)]="v.attributes['color']" maxlength="100"></label>
+<label class="check"><input [name]="'enabled'+i" type="checkbox" [(ngModel)]="v.enabled"> Activa</label>
+<button type="button" class="secondary" (click)="removeVariant(i,editor)" [disabled]="draft.variants.length===1">Quitar variante</button></div>}
+<button class="secondary" type="button" (click)="addVariant(editor)" [disabled]="draft.variants.length>=50">Agregar variante</button>
+<div class="actions"><button [disabled]="editor.invalid||busy()">Guardar borrador</button><button type="button" (click)="publish(editor)" [disabled]="!selected()?.draft||editor.dirty||busy()">Publicar borrador guardado</button></div>
+@if(editor.dirty){<small>Guarda los cambios antes de publicar. Cambiar de producto descartará los cambios sin guardar.</small>}
+</fieldset></form>
+@if(selected();as p){<div class="archive"><a class="preview" [href]="'https://blessrom.com/producto/'+p.id" target="_blank" rel="noopener">Ver en la tienda ↗</a>
+@if(!p.archived){<label class="check"><input type="checkbox" [ngModel]="confirmedArchive()" (ngModelChange)="confirmedArchive.set($event)"> Confirmo retirar este producto de la tienda</label><button type="button" class="secondary" (click)="archive(editor)" [disabled]="!confirmedArchive()||busy()">Archivar producto</button>}
+</div>}</section></div></main>

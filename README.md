@@ -1,62 +1,54 @@
 # Blessrom — frontend
 
-Workspace Angular 22 con dos aplicaciones standalone e independientes.
+Workspace Angular 22 con dos aplicaciones: tienda pública y administración interna.
 
-| Aplicación | Código | Desarrollo | Salida de producción |
-| --- | --- | --- | --- |
-| Tienda pública | projects/tienda | http://127.0.0.1:4200 | dist/tienda/browser |
-| Administración interna | projects/administracion | http://127.0.0.1:4201 | dist/administracion/browser |
+## Desarrollo
+Usar Node 24 (.nvmrc) y ejecutar:
+```powershell
+npm ci
+npm run start:tienda
+# En otra terminal:
+npm run start:admin
+```
 
-## Requisitos y ejecución
-Node.js 24.15 o superior dentro de la rama 24; versión de referencia: 24.22.1 (.nvmrc).
-El Node 20.16 instalado originalmente en este equipo no es compatible.
-Instalar Node 24 antes de ejecutar los comandos siguientes en PowerShell:
+Tienda: http://127.0.0.1:4200. Administración: http://127.0.0.1:4201.
 
-    Set-Location "D:\Proyecto Blessrom\frontend-blessrom"
-    npm ci
-    npm run start:tienda
+## Funciones
+- Portada, logo integrado y panel lateral del asistente (IA pendiente).
+- Catálogo público: búsqueda, categorías, paginación y detalle de producto.
+- Administración: inicio de sesión Keycloak con PKCE S256 y rol de realm admin.
+- Categorías, productos, variantes, precios, URL de imagen HTTPS, borradores, publicación y archivo.
+- Control de versiones para evitar sobrescribir cambios concurrentes.
+- Tokens en memoria y autorización exclusivamente hacia /api/v1/admin/.
+- Pendientes: carga de archivos, edición de inventario, carrito, checkout, pagos y asistente IA.
 
-En otra terminal, desde el mismo directorio:
+## Cuenta inicial
+El cliente OIDC se prepara con deploy/configure-keycloak-admin.sh y el JSON adyacente.
+En el VPS ejecutar:
+```bash
+python3 /opt/blessrom/frontend-auth/create-admin-user.py
+```
+Introduce la contraseña directamente en PuTTY. La cuenta será blessrom-admin.
+El script no modifica una cuenta existente. Si la asignación del rol falla tras crearla,
+revisar el rol admin en el realm blessrom antes de volver a intentar.
 
-    npm run start:admin
+## Flujo de prueba
+1. Abrir https://admin.blessrom.com e iniciar sesión.
+2. En Productos, crear una categoría.
+3. Crear un producto con slug único, nombre, descripción, categoría y una variante con SKU y precio en soles.
+4. Guardar el borrador. Todavía no aparece en la tienda.
+5. Publicar el borrador guardado.
+6. Revisar https://blessrom.com/catalogo y abrir su ficha.
+7. Modificar y guardar un borrador: la tienda conserva la versión publicada hasta volver a publicar.
+8. Archivar un producto lo retira del catálogo público.
+El stock debe cargarse por la API de inventario; este formulario no lo ajusta.
 
-Producción:
-
-    npm run build
-
-Cada aplicación genera archivos estáticos independientes. No requiere un proceso Node en el VPS.
-El servidor de producción debe resolver las rutas de Angular con fallback a index.html.
-
-## Alcance inicial
-- Tienda: portada responsive, logo recuperado de la propuesta aprobada, navegación al catálogo y panel lateral del asistente.
-- Catálogo: pantalla inicial y comprobación real de disponibilidad de la API; aún no presenta productos.
-- Administración: vista general y comprobación real de disponibilidad de la API.
-- SCSS compartido en shared/theme.scss, rutas lazy y TypeScript/templates estrictos.
-- Asistente: interfaz únicamente, claramente marcado como pendiente; no simula respuestas de IA.
-- Todavía no se implementaron login Keycloak, CRUD comercial, carrito, checkout, pagos, cuenta ni contacto.
-- La pantalla de administración no concede permisos. Los endpoints protegidos del backend requieren autenticación.
-
-## API
-El navegador consulta /api/v1. En desarrollo proxy.conf.json reenvía a
-https://api.blessrom.com con validación TLS. Solo se consulta GET /api/v1/system.
-No se incluyen tokens, contraseñas ni claves privadas.
-
-Antes de publicar el frontend, configurar /api/ en cada origen mediante Nginx hacia el backend,
-o implementar una URL configurable y la política CORS correspondiente. El proxy de desarrollo
-no se incluye en los builds. No se cambió el VPS ni se desplegó este frontend.
-
-## Validación inicial
-Ambas aplicaciones compilaron en producción con Angular 22 y Node 24.22.1.
-Por un error EPERM de Windows al instalar node_modules en D:, se validó una copia de los
-mismos fuentes en la carpeta frontend-validation del espacio de trabajo de Codex.
-El lockfile proviene de esa instalación. La instalación local en este repositorio
-se realiza con npm ci desde PowerShell después de actualizar Node.
-
-## Próximas entregas
-1. Integración OIDC/PKCE con Keycloak y acceso del equipo.
-2. Catálogo real y fichas de productos.
-3. Gestión interna de productos, precios, imágenes e inventario.
-4. Carrito, envío, checkout y pedidos.
-5. Pasarela de pago, asistente IA y despliegue del frontend por GitHub Actions.
-## Despliegue automatizado
-Consultar [GitHub Actions y VPS](docs/despliegue-github-actions.md).
+## Validación y despliegue
+```powershell
+npm test
+npm run build
+```
+Las siete pruebas cubren autorización, aislamiento de tokens, publicación y conflictos de versión.
+La API utiliza /api/v1 con proxy local y Nginx en producción.
+GitHub Actions compila ambas aplicaciones, ejecuta las pruebas y despliega en el VPS.
+Consultar [guía de despliegue](docs/despliegue-github-actions.md).
