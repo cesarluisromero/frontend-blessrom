@@ -1,0 +1,22 @@
+<main><p class="eyebrow">Control de existencias</p><h1>Inventario</h1><p>Registra entradas y salidas por SKU. Las unidades reservadas pertenecen a pedidos pendientes.</p>
+@if(error()){<p class="alert" role="alert">{{error()}}</p>}@if(notice()){<p class="notice" role="status">{{notice()}}</p>}
+<div class="columns"><section><h2>Seleccionar variante</h2><fieldset [disabled]="busy()">
+<label>Producto<select [(ngModel)]="productId" (ngModelChange)="selectProduct()"><option value="">Selecciona un producto</option>@for(p of products();track p.id){<option [value]="p.id">{{name(p)}}{{p.archived?' (archivado)':''}}</option>}</select></label>
+<div class="actions"><button (click)="load(page-1)" [disabled]="page===0">Anterior</button><span>Página {{page+1}}</span><button (click)="load(page+1)" [disabled]="(page+1)*12>=total()">Siguiente</button><button (click)="load(page)">Actualizar lista</button></div>
+@if(!products().length){<p>No hay productos en esta página. Guarda primero un producto.</p>}
+<label>SKU / talla / color<select [(ngModel)]="variantId" (ngModelChange)="selectVariant()"><option value="">Selecciona una variante</option>@for(v of variants();track v.id){<option [value]="v.id">{{label(v)}}{{v.enabled?'':' (deshabilitada)'}}</option>}</select></label>
+</fieldset></section><section><h2>Stock y ajustes</h2>@if(busy()){<p role="status">Procesando…</p>}
+@if(stock();as s){<div class="variant"><p>En almacén<br><strong>{{s.on_hand}}</strong></p><p>Reservado<br><strong>{{s.reserved}}</strong></p><p>Disponible para vender<br><strong>{{s.available}}</strong></p></div>
+<form (ngSubmit)="adjust()"><fieldset [disabled]="busy()">
+<label>Operación<select name="direction" [(ngModel)]="direction" (ngModelChange)="confirmed=false"><option value="in">Entrada de unidades</option><option value="out">Salida de unidades</option></select></label>
+<label>Cantidad<input name="quantity" type="number" [(ngModel)]="quantity" (ngModelChange)="confirmed=false" min="1" max="1000000" step="1" required></label>
+<label>Motivo<textarea name="reason" [(ngModel)]="reason" (ngModelChange)="confirmed=false" maxlength="300" required placeholder="Ejemplo: recepción de mercadería"></textarea></label>
+@if(quantity){<p>Saldo previsto en almacén: <strong>{{s.on_hand+delta()}}</strong>. Disponible: <strong>{{s.available+delta()}}</strong>.</p>}
+@if(stale()){<p class="alert">Recarga el stock y revisa el historial antes de volver a intentar.</p>}
+<label class="check"><input type="checkbox" name="confirmed" [(ngModel)]="confirmed">Confirmo la cantidad y el motivo.</label>
+<div class="actions"><button type="submit" [disabled]="!valid()||!confirmed">Registrar ajuste</button><button type="button" class="secondary" (click)="reload()">Recargar stock e historial</button></div>
+<small>Solo cantidades enteras. No puedes retirar unidades reservadas. Los cambios afectan al stock inmediatamente, sin volver a publicar el producto.</small>
+</fieldset></form><h2>Historial de movimientos</h2>
+@for(m of movements();track m.id){<article class="variant"><div><strong>{{m.reason}}</strong><p>{{m.created_at | date:'dd/MM/yyyy HH:mm':'-0500'}} (Perú)</p><small>{{m.actor}}</small></div><div><p>Almacén: {{m.on_hand_delta>0?'+':''}}{{m.on_hand_delta}}</p><p>Reservado: {{m.reserved_delta>0?'+':''}}{{m.reserved_delta}}</p></div></article>}@empty{<p>No hay movimientos en esta página.</p>}
+<div class="actions"><button [disabled]="busy()||movementPage===0" (click)="historyPage(movementPage-1)">Anteriores</button><span>Página {{movementPage+1}}</span><button [disabled]="busy()||movements().length<20" (click)="historyPage(movementPage+1)">Más movimientos</button></div>
+}@else{<p>Selecciona un producto y una variante.</p>@if(variantId){<button [disabled]="busy()" (click)="reload()">Reintentar</button>}}</section></div></main>

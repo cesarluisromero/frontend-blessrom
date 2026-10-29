@@ -20,7 +20,7 @@ Tienda: http://127.0.0.1:4200. Administración: http://127.0.0.1:4201.
 - Categorías, productos, variantes, precios, URL de imagen HTTPS, borradores, publicación y archivo.
 - Control de versiones para evitar sobrescribir cambios concurrentes.
 - Tokens en memoria y autorización exclusivamente hacia /api/v1/admin/.
-- Pendientes: carga de archivos, edición de inventario, carrito, checkout, pagos y asistente IA.
+- Pendientes: carga de archivos, carrito, checkout, pagos y asistente IA.
 
 ## Cuenta inicial
 El cliente OIDC se prepara con deploy/configure-keycloak-admin.sh y el JSON adyacente.
@@ -41,14 +41,14 @@ revisar el rol admin en el realm blessrom antes de volver a intentar.
 6. Revisar https://blessrom.com/catalogo y abrir su ficha.
 7. Modificar y guardar un borrador: la tienda conserva la versión publicada hasta volver a publicar.
 8. Archivar un producto lo retira del catálogo público.
-El stock debe cargarse por la API de inventario; este formulario no lo ajusta.
+Para cargar stock, abre Inventario, selecciona el producto y SKU, elige Entrada, indica cantidad y motivo, confirma y registra. Las salidas no pueden consumir unidades reservadas. El historial muestra fecha en Perú, actor y variaciones de almacén y reservas. Si hay un error al guardar, recarga y revisa el historial antes de reintentar para evitar duplicar ajustes.
 
 ## Validación y despliegue
 ```powershell
 npm test
 npm run build
 ```
-Las siete pruebas cubren autorización, aislamiento de tokens, publicación y conflictos de versión.
+Las pruebas cubren autorización, aislamiento de tokens, publicación, ajustes de inventario y conflictos de versión.
 La API utiliza /api/v1 con proxy local y Nginx en producción.
 GitHub Actions compila ambas aplicaciones, ejecuta las pruebas y despliega en el VPS.
 Consultar [guía de despliegue](docs/despliegue-github-actions.md).
