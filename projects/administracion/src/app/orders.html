@@ -1,0 +1,17 @@
+<main><p class="eyebrow">Operación comercial</p><h1>Pedidos y envíos</h1>
+@if(error()){<p class="alert" role="alert">{{error()}}</p>}@if(notice()){<p class="notice" role="status">{{notice()}}</p>}
+<div class="columns"><section><div class="row"><h2>Pedidos</h2><button (click)="load()" [disabled]="busy()">Actualizar</button></div>
+@for(o of orders();track o.id){<button class="product" (click)="open(o.id)"><strong>{{o.id}}</strong><small>{{status(o.status)}} · {{money(o.total)}} · {{o.created_at|date:'dd/MM/yyyy HH:mm':'-0500'}}</small></button>}@empty{<p>Todavía no hay pedidos.</p>}
+<div class="actions"><button (click)="pageTo(page-1)" [disabled]="page===0">Anterior</button><span>Página {{page+1}}</span><button (click)="pageTo(page+1)" [disabled]="(page+1)*20>=total()">Siguiente</button></div>
+@if(selected();as o){<h2>Detalle</h2><p><strong>{{status(o.status)}}</strong></p><p>{{o.customer.recipient}} · {{o.customer.email}} · {{o.customer.phone}}</p><p>{{o.customer.address}}, {{o.customer.districtName}}</p>
+@for(i of o.items;track i.variant_id){<article class="variant"><span>{{i.quantity}} × {{i.name}} ({{i.sku}})</span><strong>{{money(i.line_total)}}</strong></article>}<p>Subtotal {{money(o.subtotal)}} · Envío {{money(o.shipping)}} · <strong>Total {{money(o.total)}}</strong></p>
+<h3>Historial</h3>@for(h of o.history;track h.created_at){<p>{{h.created_at|date:'dd/MM/yyyy HH:mm':'-0500'}} · {{status(h.status)}} · {{h.actor}}</p>}}
+</section><section><h2>Tarifas de envío</h2><p>El checkout solo permite distritos con una tarifa activa.</p>
+@for(r of rates();track r.id){<button class="product" (click)="edit(r)"><strong>{{r.district_name}}</strong><small>UBIGEO {{r.district_code}} · {{money(r.amount)}} · {{r.active?'Activa':'Inactiva'}}</small></button>}@empty{<p>No existen tarifas. Crea una para habilitar el checkout.</p>}
+<form #rateForm="ngForm" (ngSubmit)="saveRate(rateForm)"><fieldset [disabled]="busy()"><h3>{{editing?'Editar':'Nueva'}} tarifa</h3>
+<label>Código UBIGEO del distrito<input name="code" [(ngModel)]="districtCode" pattern="[0-9]{6}" maxlength="6" required></label>
+<label>Distrito<input name="name" [(ngModel)]="districtName" maxlength="150" required></label>
+<label>Costo en soles<input name="amount" [(ngModel)]="amount" type="number" min="0" step="0.01" required></label>
+<label class="check"><input name="active" [(ngModel)]="active" type="checkbox">Tarifa activa</label>
+<div class="actions"><button type="submit" [disabled]="rateForm.invalid">Guardar tarifa</button>@if(editing){<button type="button" class="secondary" (click)="reset(rateForm)">Cancelar edición</button>}</div></fieldset></form>
+</section></div></main>

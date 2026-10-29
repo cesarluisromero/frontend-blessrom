@@ -20,7 +20,9 @@ Tienda: http://127.0.0.1:4200. Administración: http://127.0.0.1:4201.
 - Categorías, productos, variantes, precios, URL de imagen HTTPS, borradores, publicación y archivo.
 - Control de versiones para evitar sobrescribir cambios concurrentes.
 - Tokens en memoria y autorización exclusivamente hacia /api/v1/admin/.
-- Pendientes: carga de archivos, carrito, checkout, pagos y asistente IA.
+- Carrito persistente, validación de stock, tarifas por distrito, checkout y reserva de inventario por pedido.
+- Consulta administrativa de pedidos y cancelación del cliente mientras la reserva está pendiente.
+- Pendientes: carga de archivos, pasarela de pago y asistente IA.
 
 ## Cuenta inicial
 El cliente OIDC se prepara con deploy/configure-keycloak-admin.sh y el JSON adyacente.
@@ -43,12 +45,21 @@ revisar el rol admin en el realm blessrom antes de volver a intentar.
 8. Archivar un producto lo retira del catálogo público.
 Para cargar stock, abre Inventario, selecciona el producto y SKU, elige Entrada, indica cantidad y motivo, confirma y registra. Las salidas no pueden consumir unidades reservadas. El historial muestra fecha en Perú, actor y variaciones de almacén y reservas. Si hay un error al guardar, recarga y revisa el historial antes de reintentar para evitar duplicar ajustes.
 
+## Flujo de compra sin pasarela
+1. En Administración → Pedidos y envíos, crea una tarifa activa con el código UBIGEO de seis dígitos.
+2. Desde Inventario registra existencias para una variante publicada.
+3. En la tienda abre el producto, agrega una variante al carrito y ajusta la cantidad.
+4. En el checkout selecciona el distrito, calcula el total y confirma los datos de entrega.
+5. El pedido queda Pendiente de pago y reserva el stock durante 30 minutos.
+6. El cliente puede cancelar desde la confirmación; el stock también se libera al vencer la reserva.
+7. El equipo consulta el pedido y su historial en Administración → Pedidos y envíos.
+
 ## Validación y despliegue
 ```powershell
 npm test
 npm run build
 ```
-Las pruebas cubren autorización, aislamiento de tokens, publicación, ajustes de inventario y conflictos de versión.
+Las pruebas cubren autorización, aislamiento de tokens, publicación, ajustes de inventario, persistencia del carrito, encabezados privados e idempotencia del checkout.
 La API utiliza /api/v1 con proxy local y Nginx en producción.
 GitHub Actions compila ambas aplicaciones, ejecuta las pruebas y despliega en el VPS.
 Consultar [guía de despliegue](docs/despliegue-github-actions.md).

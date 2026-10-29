@@ -9,7 +9,7 @@
     "build": "npm run build:tienda && npm run build:admin",
     "build:tienda": "ng build tienda",
     "build:admin": "ng build administracion",
-    "test": "ng test administracion --watch=false"
+    "test": "ng test administracion --watch=false && ng test tienda --watch=false"
   },
   "private": true,
   "packageManager": "npm@10.8.2",

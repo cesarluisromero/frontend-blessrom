@@ -65,6 +65,12 @@
               ]
             }
           }
+        },
+        "test": {
+          "builder": "@angular/build:unit-test",
+          "options": {
+            "tsConfig": "projects/tienda/tsconfig.spec.json"
+          }
         }
       },
       "projectType": "application",

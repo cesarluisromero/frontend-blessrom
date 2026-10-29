@@ -3,6 +3,14 @@ export interface Variant { id?:string; sku:string; attributes:Record<string,stri
 export interface Content { name:string; description:string; categoryId:string; imageUrl:string|null; variants:Variant[]; }
 export interface Product { id:string; slug:string; version:number; archived:boolean; draft?:Content|null; published?:Content|null; content?:Content; }
 export interface Page<T> { items:T[]; page:number; size:number; total:number; }
+export interface CartLine { variantId:string; sku:string; quantity:number; name?:string; attributes?:Record<string,string>; unitPrice?:string; lineTotal?:string; available:boolean; }
+export interface Cart { id:string; status:string; expiresAt:string; items:CartLine[]; }
+export interface CartAccess { id:string; accessToken:string; expiresAt:string; }
+export interface ShippingRate { id:string; version:number; district_code:string; district_name:string; amount:string|number; active:boolean; }
+export interface Quote { cartId:string; currency:'PEN'; items:CartLine[]; subtotal:string; shipping:string; total:string; fingerprint:string; districtName:string; }
+export interface Customer { recipient:string; email:string; phone:string; address:string; districtCode:string; districtName?:string; }
+export interface OrderLine { variant_id:string; sku:string; name:string; attributes:Record<string,string>; quantity:number; unit_price:string; line_total:string; }
+export interface Order { id:string; status:string; currency:'PEN'; subtotal:string; shipping:string; total:string; customer:Customer; created_at:string; reservation_expires_at:string; items:OrderLine[]; history:{status:string;actor:string;created_at:string}[]; }
 export const money = (value:string|number) => new Intl.NumberFormat('es-PE',{style:'currency',currency:'PEN'}).format(Number(value));
 export function safeImage(url:string|null|undefined):string|null {
  try { const parsed=new URL(url ?? ''); return parsed.protocol==='https:' ? parsed.href : null; } catch { return null; }

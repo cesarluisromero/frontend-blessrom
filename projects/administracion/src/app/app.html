@@ -1,6 +1,6 @@
 <div class="layout">
 <aside><a routerLink="/" class="brand"><img src="/blessrom-logo.webp" alt="Blessrom C &amp; M" width="220" height="74"></a><p class="label">ADMINISTRACIÓN</p>
-@if(auth.admin()){<nav aria-label="Administración"><a routerLink="/">Vista general</a><a routerLink="/productos">Productos y categorías</a><a routerLink="/inventario">Inventario</a></nav>}
+@if(auth.admin()){<nav aria-label="Administración"><a routerLink="/">Vista general</a><a routerLink="/productos">Productos y categorías</a><a routerLink="/inventario">Inventario</a><a routerLink="/pedidos">Pedidos y envíos</a></nav>}
 <small>Perú · PEN</small></aside>
 <div><header><span>{{auth.username() || 'Acceso del equipo'}}</span>@if(auth.authenticated()){<button (click)="auth.logout()">Cerrar sesión</button>}</header>
 @if(auth.error()){<p role="alert">{{auth.error()}}</p>}<router-outlet /></div></div>
