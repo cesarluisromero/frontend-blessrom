@@ -12,8 +12,8 @@ export class Orders {
  constructor(){void this.load();}
  status(s:string){return ({PENDING_PAYMENT:'Pendiente de pago',PAYMENT_CONFIRMED:'Pago confirmado',PREPARING:'En preparación',SHIPPED:'Enviado',DELIVERED:'Entregado',CANCELLED:'Cancelado',EXPIRED:'Reserva vencida'} as Record<string,string>)[s]??s;}
  next(s:string){return ({PAYMENT_CONFIRMED:{status:'PREPARING',label:'Iniciar preparación'},PREPARING:{status:'SHIPPED',label:'Marcar como enviado'},SHIPPED:{status:'DELIVERED',label:'Marcar como entregado'}} as Record<string,{status:string;label:string}>)[s];}
- paymentStatus(s:string){return ({SUBMITTED:'Pendiente de revisión',APPROVED:'Aprobado',REJECTED:'Rechazado'} as Record<string,string>)[s]??s;}
- method(s:string){return ({YAPE:'Yape',PLIN:'Plin',BANK_TRANSFER:'Transferencia bancaria',CASH_ON_DELIVERY:'Pago contra entrega'} as Record<string,string>)[s]??s;}
+ paymentStatus(s:string){return ({PENDING_PROVIDER:'Esperando pago',SUBMITTED:'Pendiente de revisión',APPROVED:'Aprobado',REJECTED:'Rechazado'} as Record<string,string>)[s]??s;}
+ method(s:string){return ({MERCADO_PAGO:'Mercado Pago',YAPE:'Yape',PLIN:'Plin',BANK_TRANSFER:'Transferencia bancaria',CASH_ON_DELIVERY:'Pago contra entrega'} as Record<string,string>)[s]??s;}
  notificationStatus(s:string){return ({PENDING:'Pendiente',SENT:'Enviado',FAILED:'Fallido'} as Record<string,string>)[s]??s;}
  private async run(fn:()=>Promise<void>){if(this.busy())return;this.busy.set(true);this.error.set('');this.notice.set('');try{await fn();}catch(e){this.error.set(errorMessage(e));}finally{this.busy.set(false);}}
  async load(){await this.run(async()=>{await Promise.all([this.loadOrders(),this.loadRates()]);});}
