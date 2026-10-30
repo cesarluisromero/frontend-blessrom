@@ -67,9 +67,16 @@ describe('Order lifecycle',()=>{
   expect(page.selected()?.status).toBe('PREPARING');controller.verify();
  });
 
- it('requires ready to ship before an order can be marked as shipped',()=>{
+ it('requires ready to ship before an order can be marked as shipped',async()=>{
+  TestBed.configureTestingModule({providers:[provideHttpClient(),provideHttpClientTesting()]});
+  const page=TestBed.runInInjectionContext(()=>new Orders());
+  const controller=TestBed.inject(HttpTestingController);
+  controller.expectOne(r=>r.url==='/api/v1/admin/orders').flush({items:[],total:0,page:0,size:20});
+  controller.expectOne('/api/v1/admin/shipping-rates').flush([]);
+  await vi.waitFor(()=>expect(page.busy()).toBe(false));
   expect(page.next('PREPARING')).toEqual({status:'READY_TO_SHIP',label:'Marcar como listo para enviar'});
   expect(page.next('READY_TO_SHIP')).toEqual({status:'SHIPPED',label:'Marcar como enviado'});
+  controller.verify();
  });
 });
 describe('Draft publication',()=>{
