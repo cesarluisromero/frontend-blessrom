@@ -10,8 +10,8 @@ export class Orders {
  private http=inject(HttpClient);orders=signal<OrderSummary[]>([]);rates=signal<ShippingRate[]>([]);selected=signal<Order|null>(null);busy=signal(false);error=signal('');notice=signal('');total=signal(0);page=0;
  departmentName='';provinceName='';districtCode='';districtName='';amount:number|null=null;active=true;editing:ShippingRate|null=null;readonly money=money;
  constructor(){void this.load();}
- status(s:string){return ({PENDING_PAYMENT:'Pendiente de pago',PAYMENT_CONFIRMED:'Pago confirmado',PREPARING:'En preparación',SHIPPED:'Enviado',DELIVERED:'Entregado',CANCELLED:'Cancelado',EXPIRED:'Reserva vencida'} as Record<string,string>)[s]??s;}
- next(s:string){return ({PAYMENT_CONFIRMED:{status:'PREPARING',label:'Iniciar preparación'},PREPARING:{status:'SHIPPED',label:'Marcar como enviado'},SHIPPED:{status:'DELIVERED',label:'Marcar como entregado'}} as Record<string,{status:string;label:string}>)[s];}
+ status(s:string){return ({PENDING_PAYMENT:'Pendiente de pago',PAYMENT_CONFIRMED:'Pago confirmado',PREPARING:'En preparación',READY_TO_SHIP:'Listo para enviar',SHIPPED:'Enviado',DELIVERED:'Entregado',CANCELLED:'Cancelado',EXPIRED:'Reserva vencida'} as Record<string,string>)[s]??s;}
+ next(s:string){return ({PAYMENT_CONFIRMED:{status:'PREPARING',label:'Iniciar preparación'},PREPARING:{status:'READY_TO_SHIP',label:'Marcar como listo para enviar'},READY_TO_SHIP:{status:'SHIPPED',label:'Marcar como enviado'},SHIPPED:{status:'DELIVERED',label:'Marcar como entregado'}} as Record<string,{status:string;label:string}>)[s];}
  paymentStatus(s:string){return ({PENDING_PROVIDER:'Esperando pago',SUBMITTED:'Pendiente de revisión',APPROVED:'Aprobado',REJECTED:'Rechazado'} as Record<string,string>)[s]??s;}
  method(s:string){return ({MERCADO_PAGO:'Mercado Pago',YAPE:'Yape',PLIN:'Plin',BANK_TRANSFER:'Transferencia bancaria',CASH_ON_DELIVERY:'Pago contra entrega'} as Record<string,string>)[s]??s;}
  notificationStatus(s:string){return ({PENDING:'Pendiente',SENT:'Enviado',FAILED:'Fallido'} as Record<string,string>)[s]??s;}

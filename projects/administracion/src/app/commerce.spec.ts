@@ -66,6 +66,11 @@ describe('Order lifecycle',()=>{
   expect(page.selected()?.version).toBe(5);
   expect(page.selected()?.status).toBe('PREPARING');controller.verify();
  });
+
+ it('requires ready to ship before an order can be marked as shipped',()=>{
+  expect(page.next('PREPARING')).toEqual({status:'READY_TO_SHIP',label:'Marcar como listo para enviar'});
+  expect(page.next('READY_TO_SHIP')).toEqual({status:'SHIPPED',label:'Marcar como enviado'});
+ });
 });
 describe('Draft publication',()=>{
  afterEach(()=>TestBed.resetTestingModule());
