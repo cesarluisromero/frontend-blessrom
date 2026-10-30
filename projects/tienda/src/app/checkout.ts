@@ -1,9 +1,12 @@
 import {Component,inject,signal} from '@angular/core';
 import {FormsModule,NgForm} from '@angular/forms';
 import {HttpClient} from '@angular/common/http';
+import {firstValueFrom} from 'rxjs';
 import {Router,RouterLink} from '@angular/router';
 import {CartService} from './cart.service';
 import {Quote,ShippingRate,errorMessage,money} from '../../../../shared/commerce';
+import {CustomerAuthService} from './auth';
+import type {Address} from './account';
 @Component({selector:'app-checkout',imports:[FormsModule,RouterLink],template:`<main><a routerLink="/carrito">← Volver al carrito</a><p class="eyebrow">Entrega y confirmación</p><h1>Finalizar compra</h1>
 @if(error()){<p class="alert" role="alert">{{error()}}</p>}
 <div class="columns"><form #form="ngForm" (ngSubmit)="confirm(form)"><fieldset [disabled]="busy()">
@@ -17,8 +20,9 @@ import {Quote,ShippingRate,errorMessage,money} from '../../../../shared/commerce
 <label class="check"><input type="checkbox" name="confirmed" [(ngModel)]="confirmed">Confirmo los productos, la dirección y el total.</label>
 <button type="submit" [disabled]="form.invalid||!confirmed">Crear pedido</button><small>El stock quedará reservado durante 30 minutos. En el siguiente paso registrarás el medio de pago.</small>}
 </fieldset></form><aside><h2>Resumen</h2>@for(i of cart.cart()?.items??[];track i.variantId){<p>{{i.quantity}} × {{i.name}} <strong>{{money(i.lineTotal||0)}}</strong></p>}</aside></div></main>`,styleUrl:'./checkout.scss'})
-export class Checkout {private http=inject(HttpClient);private router=inject(Router);readonly cart=inject(CartService);rates=signal<ShippingRate[]>([]);busy=signal(false);error=signal('');quote:Quote|null=null;recipient='';email='';phone='';address='';district='';confirmed=false;readonly money=money;
- constructor(){this.http.get<ShippingRate[]>('/api/v1/shipping-rates').subscribe({next:r=>this.rates.set(r),error:e=>this.error.set(errorMessage(e))});}
+export class Checkout {private http=inject(HttpClient);private router=inject(Router);private auth=inject(CustomerAuthService);readonly cart=inject(CartService);rates=signal<ShippingRate[]>([]);busy=signal(false);error=signal('');quote:Quote|null=null;recipient='';email='';phone='';address='';district='';confirmed=false;readonly money=money;
+ constructor(){this.http.get<ShippingRate[]>('/api/v1/shipping-rates').subscribe({next:r=>this.rates.set(r),error:e=>this.error.set(errorMessage(e))});if(this.auth.authenticated())void this.prefill();}
+ private async prefill(){try{const [p,addresses]=await Promise.all([firstValueFrom(this.http.get<{email:string;first_name:string;last_name:string;phone:string}>('/api/v1/account')),firstValueFrom(this.http.get<Address[]>('/api/v1/account/addresses'))]);const a=addresses.find(x=>x.is_default);this.recipient=a?.recipient??[p.first_name,p.last_name].filter(Boolean).join(' ');this.email=p.email??'';this.phone=a?.phone??p.phone??'';this.address=a?.address??'';this.district=a?.district_code??'';}catch{/* La compra invitada sigue disponible si el perfil no se puede cargar. */}}
  async calculate(){this.busy.set(true);this.error.set('');try{this.quote=await this.cart.quote(this.district);}catch(e){this.error.set(errorMessage(e));}finally{this.busy.set(false);}}
  async confirm(form:NgForm){if(form.invalid||!this.quote||!this.confirmed)return;this.busy.set(true);this.error.set('');try{const token=this.cart.token();const o=await this.cart.checkout({recipient:this.recipient,email:this.email,phone:this.phone,address:this.address,districtCode:this.district,quoteFingerprint:this.quote.fingerprint});sessionStorage.setItem('blessrom-order-'+o.id,JSON.stringify({order:o,token}));this.cart.clear();await this.router.navigate(['/pedido',o.id]);}catch(e){this.quote=null;this.confirmed=false;this.error.set(errorMessage(e)+' Calcula nuevamente el total.');}finally{this.busy.set(false);}}
 }
