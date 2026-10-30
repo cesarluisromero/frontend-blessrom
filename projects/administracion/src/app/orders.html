@@ -10,8 +10,10 @@
 @if(o.notifications?.length){<h3>Notificaciones</h3>@for(n of o.notifications;track n.id){<p>{{n.created_at|date:'dd/MM/yyyy HH:mm':'-0500'}} · {{notificationStatus(n.status)}} · {{n.recipient}} · intentos {{n.attempts}}</p>@if(n.last_error){<small class="alert">{{n.last_error}}</small>}}}
 }
 </section><section><h2>Tarifas de envío</h2><p>El checkout solo permite distritos con una tarifa activa.</p>
-@for(r of rates();track r.id){<button class="product" (click)="edit(r)"><strong>{{r.district_name}}</strong><small>UBIGEO {{r.district_code}} · {{money(r.amount)}} · {{r.active?'Activa':'Inactiva'}}</small></button>}@empty{<p>No existen tarifas. Crea una para habilitar el checkout.</p>}
+@for(r of rates();track r.id){<button class="product" (click)="edit(r)"><strong>{{r.district_name}}</strong><small>{{r.department_name}} · {{r.province_name}} · UBIGEO {{r.district_code}} · {{money(r.amount)}} · {{r.active?'Activa':'Inactiva'}}</small></button>}@empty{<p>No existen tarifas. Crea una para habilitar el checkout.</p>}
 <form #rateForm="ngForm" (ngSubmit)="saveRate(rateForm)"><fieldset [disabled]="busy()"><h3>{{editing?'Editar':'Nueva'}} tarifa</h3>
+<label>Departamento<input name="department" [(ngModel)]="departmentName" maxlength="150" required></label>
+<label>Provincia<input name="province" [(ngModel)]="provinceName" maxlength="150" required></label>
 <label>Código UBIGEO del distrito<input name="code" [(ngModel)]="districtCode" pattern="[0-9]{6}" maxlength="6" required></label>
 <label>Distrito<input name="name" [(ngModel)]="districtName" maxlength="150" required></label>
 <label>Costo en soles<input name="amount" [(ngModel)]="amount" type="number" min="0" step="0.01" required></label>
