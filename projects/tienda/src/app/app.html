@@ -10,7 +10,28 @@
 @if(chatOpen()) {
  <aside class="chat" aria-label="Asistente de Blessrom">
   <div class="chat-head"><div><strong>Blessrom · Asistente IA</strong><small>Tu próxima experiencia de compra</small></div><button (click)="chatOpen.set(false)" aria-label="Cerrar asistente">✕</button></div>
-  <div class="chat-content"><p class="bubble">¡Hola! Este será tu espacio para descubrir prendas y resolver dudas sobre tus compras.</p><p class="muted">El asistente está en preparación. Las recomendaciones por IA todavía no están disponibles.</p><a routerLink="/catalogo" (click)="chatOpen.set(false)">Explorar el catálogo →</a></div>
-  <div class="chat-input"><input aria-label="Mensaje al asistente" placeholder="Próximamente podrás escribir aquí" disabled><button disabled aria-label="Enviar mensaje">➤</button></div>
+  <div class="chat-content" aria-live="polite">
+   @for(message of messages();track $index){
+    <div class="message" [class.user-message]="message.role==='user'">
+     <p class="bubble">{{message.content}}</p>
+     @if(message.products?.length){<div class="chat-products">
+      @for(product of message.products;track product.id){
+       <a class="chat-product" [routerLink]="['/producto',product.id]" (click)="chatOpen.set(false)">
+        @if(product.imageUrl){<img [src]="product.imageUrl" [alt]="product.name" width="54" height="68">}
+        <span><strong>{{product.name}}</strong><small>S/ {{product.price}} · {{product.available}} disponibles</small></span>
+       </a>
+      }
+     </div>}
+    </div>
+   }
+   @if(messages().length===1){<div class="chat-suggestions">
+    <button (click)="send('¿Qué prendas tienen disponibles?')">Prendas disponibles</button>
+    <button (click)="send('Busco algo azul')">Busco algo azul</button>
+    <button (click)="send('¿Hay promociones vigentes?')">Promociones</button>
+   </div>}
+   @if(chatBusy()){<p class="typing">Blessrom está buscando opciones…</p>}
+   @if(chatError()){<p class="chat-error">{{chatError()}}</p>}
+  </div>
+  <form class="chat-input" (ngSubmit)="send()"><input [(ngModel)]="draft" name="message" maxlength="800" autocomplete="off" aria-label="Mensaje al asistente" placeholder="Pregunta sobre productos o envíos…" [disabled]="chatBusy()"><button type="submit" [disabled]="chatBusy()||!draft.trim()" aria-label="Enviar mensaje">➤</button></form>
  </aside>
 }
