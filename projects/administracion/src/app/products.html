@@ -15,7 +15,15 @@
 <label>Nombre<input name="name" [(ngModel)]="draft.name" required maxlength="180"></label>
 <label>Categoría<select name="category" [(ngModel)]="draft.categoryId" required><option value="">Seleccionar</option>@for(c of categories();track c.id){<option [value]="c.id">{{c.name}}</option>}</select></label>
 <label>Descripción<textarea name="description" [(ngModel)]="draft.description" maxlength="5000" rows="4"></textarea></label>
-<label>Imagen (URL HTTPS)<input name="image" [(ngModel)]="draft.imageUrl" type="url" pattern="https://[^\s]+" maxlength="2000" placeholder="https://..."></label><small>Usa una imagen alojada en un servicio de confianza. La subida de archivos aún no está disponible.</small>
+<div class="media"><h3>Imágenes</h3>
+@if(selected()){
+<label class="upload">Seleccionar fotografía<input type="file" accept="image/jpeg,image/png,image/webp,image/avif,.heic,.heif,.tif,.tiff" (change)="selectImage($event,editor)" [disabled]="busy()"></label>
+<small>Se corrige la orientación y se generan automáticamente cuatro archivos WebP. Máximo 20 MB.</small>
+@if(uploadProgress()){<p class="progress" role="status">{{uploadProgress()}}</p>}
+@if(media().length){<div class="gallery">@for(image of media();track image.id){<button type="button" class="media-card" (click)="draft.imageUrl=image.urls.medium;editor.form.markAsDirty()" [class.selected]="draft.imageUrl===image.urls.medium"><img [src]="image.urls.thumbnail" [alt]="image.alt_text??draft.name"><span>{{draft.imageUrl===image.urls.medium?'Portada seleccionada':'Usar como portada'}}</span></button>}</div>}
+} @else {<p class="media-help">Primero guarda el producto; después podrás subir sus fotografías.</p>}
+<details><summary>Usar una URL externa temporalmente</summary><label>Imagen (URL HTTPS)<input name="image" [(ngModel)]="draft.imageUrl" type="url" pattern="https://[^\s]+" maxlength="2000" placeholder="https://..."></label></details>
+</div>
 <h3>Variantes y precios</h3>
 @for(v of draft.variants;track $index;let i=$index){<div class="variant">
 <label>SKU<input [name]="'sku'+i" [(ngModel)]="v.sku" required pattern="[A-Za-z0-9_-]+" maxlength="80"></label>
