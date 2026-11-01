@@ -1,0 +1,11 @@
+.gallery{grid-template-columns:repeat(auto-fill,minmax(220px,1fr))}
+.media-card{padding:10px;border-radius:7px}
+.media-preview{position:relative}
+.media-preview img{display:block;width:100%;aspect-ratio:4/5;object-fit:cover;object-position:center top;background:#eef2f7;border-radius:4px}
+.media-preview strong{position:absolute;top:8px;left:8px;padding:5px 8px;border-radius:20px;background:var(--blue);color:white;font-size:11px}
+.media-card label{margin:10px 0}
+.media-card input{font-size:12px}
+.media-actions{display:flex;gap:6px;flex-wrap:wrap}
+.media-actions button{padding:8px;font-size:12px}
+.danger{background:#fff0ed;color:#862b22}
+.media-actions .danger{margin-left:auto}

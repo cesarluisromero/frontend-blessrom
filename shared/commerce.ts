@@ -1,6 +1,8 @@
 export interface Category { id:string; name:string; slug:string; }
 export interface Variant { id?:string; sku:string; attributes:Record<string,string>; price:string|number; enabled:boolean; available?:number; }
-export interface Content { name:string; description:string; categoryId:string; imageUrl:string|null; variants:Variant[]; }
+export type MediaVariant='original'|'large'|'medium'|'thumbnail';
+export interface ProductMedia { id:string; alt_text:string|null; is_primary:boolean; display_order?:number; urls:Record<MediaVariant,string>; }
+export interface Content { name:string; description:string; categoryId:string; imageUrl:string|null; media?:ProductMedia[]; variants:Variant[]; }
 export interface Product { id:string; slug:string; version:number; archived:boolean; draft?:Content|null; published?:Content|null; content?:Content; }
 export interface Page<T> { items:T[]; page:number; size:number; total:number; }
 export interface CartLine { variantId:string; sku:string; quantity:number; name?:string; attributes?:Record<string,string>; unitPrice?:string; lineTotal?:string; available:boolean; }

@@ -2,8 +2,8 @@ import { Component, inject, signal } from '@angular/core';
 import { FormsModule, NgForm } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
-import { Category, Content, Product, Page, errorMessage, money } from '../../../../shared/commerce';
-@Component({selector:'app-products',imports:[FormsModule],templateUrl:'./products.html',styleUrl:'./products.scss'})
+import { Category, Content, Product, Page, ProductMedia, MediaVariant, errorMessage, money } from '../../../../shared/commerce';
+@Component({selector:'app-products',imports:[FormsModule],templateUrl:'./products.html',styleUrls:['./products.scss','./products-gallery.scss']})
 export class Products {
  private readonly http=inject(HttpClient);
  readonly items=signal<Product[]>([]);readonly categories=signal<Category[]>([]);
@@ -51,10 +51,14 @@ export class Products {
    const completed=await firstValueFrom(this.http.post<MediaAsset>('/api/v1/admin/products/'+product.id+'/media/'+session.assetId+'/complete',{
     objects:variants.map(item=>({variant:item.variant,width:item.width,height:item.height,byteSize:item.blob.size}))
    }));
-   this.media.update(items=>[...items,completed]);this.draft.imageUrl=completed.urls.medium;form.form.markAsDirty();
-   this.notice.set('Imagen optimizada y subida. Guarda el borrador para usarla como portada.');
+   await this.loadMedia(product.id);
+   this.notice.set(completed.is_primary?'Imagen optimizada, subida y seleccionada como principal.':'Imagen optimizada y agregada a la galería.');
   });}finally{this.uploadProgress.set('');}
  }
+ async setPrimary(image:MediaAsset){const product=this.selected();if(!product)return;await this.run(async()=>{await firstValueFrom(this.http.put('/api/v1/admin/products/'+product.id+'/media/'+image.id,{altText:image.alt_text,primary:true}));await this.loadMedia(product.id);this.notice.set('Imagen principal actualizada.');});}
+ async saveAlt(image:MediaAsset,altText:string){const product=this.selected();if(!product)return;await this.run(async()=>{await firstValueFrom(this.http.put('/api/v1/admin/products/'+product.id+'/media/'+image.id,{altText:altText.trim()||null,primary:false}));await this.loadMedia(product.id);this.notice.set('Texto alternativo guardado.');});}
+ async moveMedia(index:number,delta:number){const product=this.selected();const next=index+delta;if(!product||next<0||next>=this.media().length)return;await this.run(async()=>{const ordered=[...this.media()];[ordered[index],ordered[next]]=[ordered[next],ordered[index]];this.media.set(await firstValueFrom(this.http.put<MediaAsset[]>('/api/v1/admin/products/'+product.id+'/media-order',{assetIds:ordered.map(item=>item.id)})));this.notice.set('Orden de la galería actualizado.');});}
+ async deleteMedia(image:MediaAsset){const product=this.selected();if(!product||!confirm('¿Eliminar esta imagen de la galería y de Cloudflare R2?'))return;await this.run(async()=>{await firstValueFrom(this.http.delete('/api/v1/admin/products/'+product.id+'/media/'+image.id));await this.loadMedia(product.id);this.notice.set('Imagen eliminada.');});}
  private async webpVariants(file:File):Promise<PreparedImage[]>{
   let bitmap:ImageBitmap;
   try{bitmap=await createImageBitmap(file,{imageOrientation:'from-image'});}catch{throw new Error('El navegador no pudo abrir este formato. Convierte HEIC/TIFF a JPG o PNG y vuelve a intentarlo.');}
@@ -72,7 +76,6 @@ export class Products {
  variantLabel(value:MediaVariant){return {original:'original',large:'grande',medium:'catálogo',thumbnail:'miniatura'}[value];}
 }
 
-type MediaVariant='original'|'large'|'medium'|'thumbnail';
 interface PreparedImage{variant:MediaVariant;width:number;height:number;blob:Blob}
 interface MediaUploadSession{assetId:string;expiresIn:number;uploads:{variant:MediaVariant;uploadUrl:string;objectKey:string;contentType:string}[]}
-interface MediaAsset{id:string;status:string;alt_text:string|null;urls:Record<MediaVariant,string>;objects:{variant:MediaVariant;width:number;height:number;byte_size:number}[]}
+interface MediaAsset extends ProductMedia{status:string;objects:{variant:MediaVariant;width:number;height:number;byte_size:number}[]}
