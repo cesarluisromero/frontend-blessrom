@@ -4,6 +4,7 @@ import {HttpClient} from '@angular/common/http';
 import {FormsModule} from '@angular/forms';
 import {firstValueFrom} from 'rxjs';
 import { CartService } from './cart.service';
+import {money, safeImage} from '../../../../shared/commerce';
 type ChatMessage={role:'user'|'assistant';content:string;products?:AssistantProduct[]};
 type AssistantProduct={id:string;slug:string;name:string;imageUrl?:string;price:number|string;available:number};
 type AssistantResponse={reply:string;products:AssistantProduct[];poweredByAi:boolean};
@@ -15,10 +16,20 @@ export class App {
  readonly chatOpen = signal(false);
  readonly chatBusy = signal(false);
  readonly chatError = signal('');
+ readonly failedProductImages = signal<ReadonlySet<string>>(new Set());
+ readonly money = money;
  readonly messages=signal<ChatMessage[]>([{role:'assistant',content:'¡Hola! Soy el asistente de Blessrom. Puedo ayudarte a encontrar prendas disponibles, conocer precios, promociones y opciones de envío.'}]);
  draft='';
  readonly cart=inject(CartService);
  private readonly http=inject(HttpClient);
+
+ productImage(product:AssistantProduct):string|null {
+  return this.failedProductImages().has(product.id) ? null : safeImage(product.imageUrl);
+ }
+
+ markProductImageAsFailed(productId:string):void {
+  this.failedProductImages.update(ids=>new Set([...ids,productId]));
+ }
 
  async send(prompt?:string){
   const message=(prompt??this.draft).trim();

@@ -17,8 +17,10 @@
      @if(message.products?.length){<div class="chat-products">
       @for(product of message.products;track product.id){
        <a class="chat-product" [routerLink]="['/producto',product.id]" (click)="chatOpen.set(false)">
-        @if(product.imageUrl){<img [src]="product.imageUrl" [alt]="product.name" width="54" height="68">}
-        <span><strong>{{product.name}}</strong><small>S/ {{product.price}} · {{product.available}} disponibles</small></span>
+        @if(productImage(product);as imageUrl){
+         <img [src]="imageUrl" [alt]="product.name" width="54" height="68" loading="lazy" referrerpolicy="no-referrer" (error)="markProductImageAsFailed(product.id)">
+        }@else{<span class="chat-product-placeholder" aria-hidden="true">B</span>}
+        <span><strong>{{product.name}}</strong><small>{{money(product.price)}} · {{product.available}} disponibles</small></span>
        </a>
       }
      </div>}
