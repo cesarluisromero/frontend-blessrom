@@ -5,6 +5,7 @@ export const routes:Routes=[
  {path:'',canActivate:[adminGuard],loadComponent:()=>import('./dashboard').then(m=>m.Dashboard),title:'Administración | Blessrom'},
  {path:'productos',canActivate:[adminGuard],loadComponent:()=>import('./products').then(m=>m.Products),title:'Productos | Blessrom'},
  {path:'inventario',canActivate:[adminGuard],loadComponent:()=>import('./inventory').then(m=>m.Inventory),title:'Inventario | Blessrom'},
+ {path:'promociones',canActivate:[adminGuard],loadComponent:()=>import('./promotions').then(m=>m.Promotions),title:'Promociones | Blessrom'},
  {path:'pedidos',canActivate:[adminGuard],loadComponent:()=>import('./orders').then(m=>m.Orders),title:'Pedidos y envíos | Blessrom'},
  {path:'**',redirectTo:''}
 ];

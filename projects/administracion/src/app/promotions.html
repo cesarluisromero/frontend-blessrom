@@ -1,0 +1,14 @@
+<main><p class="eyebrow">Ventas y fidelización</p><h1>Promociones y cupones</h1><p>Crea descuentos globales para la tienda. Se admite un cupón por pedido y su uso se reserva al crear el pedido.</p>
+@if(error()){<p class="alert" role="alert">{{error()}}</p>}@if(notice()){<p class="notice">{{notice()}}</p>}
+<div class="columns"><section><div class="row"><h2>Cupones</h2><button type="button" (click)="newPromotion(form)">Nuevo</button></div>
+@if(!items().length){<p class="muted">Todavía no hay promociones.</p>}
+@for(p of items();track p.id){<button type="button" class="card" (click)="edit(p,form)"><span><strong>{{p.code}}</strong><small>{{p.name}}</small></span><span><strong>{{discount(p)}}</strong><small>{{state(p)}} · usos {{p.usage_count}}@if(p.usage_limit!==null){/{{p.usage_limit}}}</small></span></button>}
+</section><form #form="ngForm" (ngSubmit)="save(form)"><fieldset [disabled]="busy()"><h2>{{selected()?'Editar cupón':'Nuevo cupón'}}</h2>
+<label>Nombre<input name="name" [(ngModel)]="name" maxlength="150" required></label>
+<label>Código<input name="code" [(ngModel)]="code" maxlength="30" pattern="[A-Za-z0-9_-]+" required></label>
+<div class="grid"><label>Tipo<select name="discountType" [(ngModel)]="discountType"><option value="PERCENT">Porcentaje</option><option value="FIXED">Monto fijo</option></select></label><label>Valor<input name="discountValue" [(ngModel)]="discountValue" type="number" min="0.01" [max]="discountType==='PERCENT'?100:999999" step="0.01" required></label></div>
+<div class="grid"><label>Compra mínima (S/)<input name="minimumSubtotal" [(ngModel)]="minimumSubtotal" type="number" min="0" step="0.01" required></label><label>Límite total de usos<input name="usageLimit" [(ngModel)]="usageLimit" type="number" min="1" placeholder="Sin límite"></label></div>
+<div class="grid"><label>Inicio<input name="startsAt" [(ngModel)]="startsAt" type="datetime-local" required></label><label>Fin<input name="endsAt" [(ngModel)]="endsAt" type="datetime-local" required></label></div>
+<label class="check"><input name="active" [(ngModel)]="active" type="checkbox"> Cupón activo</label>
+<button type="submit" [disabled]="form.invalid||form.pristine">Guardar promoción</button>
+</fieldset></form></div></main>

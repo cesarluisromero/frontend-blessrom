@@ -21,8 +21,8 @@ export class CartService {
  private async refreshDirect(){this.sync(await firstValueFrom(this.http.get<Cart>('/api/v1/carts/'+this.stored!.id,{headers:this.headers()})));}
  async set(variantId:string,quantity:number){await this.run(async()=>{await this.ensure();this.sync(await firstValueFrom(this.http.put<Cart>('/api/v1/carts/'+this.stored!.id+'/items/'+variantId,{quantity},{headers:this.headers()})));});}
  async remove(variantId:string){await this.run(async()=>{await firstValueFrom(this.http.delete('/api/v1/carts/'+this.stored!.id+'/items/'+variantId,{headers:this.headers()}));await this.refreshDirect();});}
- async quote(district:string){return this.run(async()=>firstValueFrom(this.http.get<Quote>('/api/v1/carts/'+this.stored!.id+'/quote',{headers:this.headers(),params:{district}})));}
- async checkout(input:{recipient:string;email:string;phone:string;address:string;districtCode:string;quoteFingerprint:string}){return this.run(async()=>{if(!this.stored!.checkoutKey){this.stored!.checkoutKey=crypto.randomUUID().replaceAll('-','');this.save();}return firstValueFrom(this.http.post<Order>('/api/v1/carts/'+this.stored!.id+'/checkout',input,{headers:this.headers().set('Idempotency-Key',this.stored!.checkoutKey!)}));});}
+ async quote(district:string,coupon?:string){const params:Record<string,string>={district};if(coupon?.trim())params['coupon']=coupon.trim();return this.run(async()=>firstValueFrom(this.http.get<Quote>('/api/v1/carts/'+this.stored!.id+'/quote',{headers:this.headers(),params})));}
+ async checkout(input:{recipient:string;email:string;phone:string;address:string;districtCode:string;quoteFingerprint:string;couponCode?:string|null}){return this.run(async()=>{if(!this.stored!.checkoutKey){this.stored!.checkoutKey=crypto.randomUUID().replaceAll('-','');this.save();}return firstValueFrom(this.http.post<Order>('/api/v1/carts/'+this.stored!.id+'/checkout',input,{headers:this.headers().set('Idempotency-Key',this.stored!.checkoutKey!)}));});}
  token(){return this.stored?.token??null;}
  clear(){this.stored=null;this.cart.set(null);this.count.set(0);this.save();}
 }
