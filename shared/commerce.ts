@@ -1,8 +1,11 @@
-export interface Category { id:string; name:string; slug:string; }
+export interface Category { id:string; name:string; slug:string; parent_id:string|null; description:string; display_order:number; active:boolean; version:number; }
+export interface Collection { id:string; name:string; slug:string; description:string; starts_at:string|null; ends_at:string|null; display_order:number; active:boolean; version:number; }
+export interface AttributeOption { id:string; attribute_id:string; value:string; label:string; swatch:string|null; display_order:number; active:boolean; }
+export interface AttributeDefinition { id:string; code:string; name:string; type:'TEXT'|'SIZE'|'COLOR'; filterable:boolean; display_order:number; active:boolean; options:AttributeOption[]; }
 export interface Variant { id?:string; sku:string; attributes:Record<string,string>; price:string|number; enabled:boolean; available?:number; }
 export type MediaVariant='original'|'large'|'medium'|'thumbnail';
 export interface ProductMedia { id:string; alt_text:string|null; is_primary:boolean; display_order?:number; urls:Record<MediaVariant,string>; }
-export interface Content { name:string; description:string; categoryId:string; imageUrl:string|null; media?:ProductMedia[]; variants:Variant[]; }
+export interface Content { name:string; description:string; categoryId:string; imageUrl:string|null; media?:ProductMedia[]; variants:Variant[]; collectionIds?:string[]; }
 export interface Product { id:string; slug:string; version:number; archived:boolean; draft?:Content|null; published?:Content|null; content?:Content; }
 export interface Page<T> { items:T[]; page:number; size:number; total:number; }
 export interface CartLine { variantId:string; sku:string; quantity:number; name?:string; attributes?:Record<string,string>; unitPrice?:string; lineTotal?:string; available:boolean; }

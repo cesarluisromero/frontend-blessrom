@@ -85,7 +85,9 @@ describe('Draft publication',()=>{
   TestBed.configureTestingModule({providers:[provideHttpClient(),provideHttpClientTesting()]});
   const page=TestBed.runInInjectionContext(()=>new Products());
   const controller=TestBed.inject(HttpTestingController);
-  controller.expectOne('/api/v1/categories').flush([]);
+  controller.expectOne('/api/v1/admin/categories').flush([]);
+  controller.expectOne('/api/v1/admin/collections').flush([]);
+  controller.expectOne('/api/v1/admin/attributes').flush([]);
   await vi.waitFor(()=>expect(controller.match(r=>r.url==='/api/v1/admin/products').map(r=>{r.flush({items:[],total:0,page:0,size:12});return r;}).length).toBe(1));
   await vi.waitFor(()=>expect(page.busy()).toBe(false));
   return {page,controller};

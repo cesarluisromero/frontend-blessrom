@@ -2,36 +2,45 @@ import { Component, inject, signal } from '@angular/core';
 import { FormsModule, NgForm } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
-import { Category, Content, Product, Page, ProductMedia, MediaVariant, errorMessage, money } from '../../../../shared/commerce';
+import { Category, Collection, AttributeDefinition, Content, Product, Page, ProductMedia, MediaVariant, errorMessage, money } from '../../../../shared/commerce';
 @Component({selector:'app-products',imports:[FormsModule],templateUrl:'./products.html',styleUrls:['./products.scss','./products-gallery.scss']})
 export class Products {
  private readonly http=inject(HttpClient);
- readonly items=signal<Product[]>([]);readonly categories=signal<Category[]>([]);
+ readonly items=signal<Product[]>([]);readonly categories=signal<Category[]>([]);readonly collections=signal<Collection[]>([]);readonly attributes=signal<AttributeDefinition[]>([]);
  readonly selected=signal<Product|null>(null);readonly busy=signal(false);readonly error=signal('');readonly notice=signal('');
  readonly total=signal(0);page=0;readonly size=12;
  readonly media=signal<MediaAsset[]>([]);readonly uploadProgress=signal('');
- slug='';categoryName='';categorySlug='';draft:Content=this.blank();
+ slug='';categoryName='';categorySlug='';categoryParent='';categoryDescription='';collectionName='';collectionSlug='';collectionDescription='';
+ optionValues:Record<string,string>={};draft:Content=this.blank();
  readonly money=money; readonly confirmedArchive=signal(false);
  constructor(){void this.load();}
- private blank():Content{return {name:'',description:'',categoryId:'',imageUrl:null,variants:[{sku:'',price:0.01,enabled:true,attributes:{talla:'',color:''}}]};}
+ private blank():Content{return {name:'',description:'',categoryId:'',imageUrl:null,collectionIds:[],variants:[{sku:'',price:0.01,enabled:true,attributes:{talla:'',color:''}}]};}
  private async run(action:()=>Promise<void>){if(this.busy())return;this.busy.set(true);this.error.set('');this.notice.set('');try{await action();}catch(e){this.error.set(errorMessage(e));}finally{this.busy.set(false);}}
  private async refreshList(){const data=await firstValueFrom(this.http.get<Page<Product>>('/api/v1/admin/products',{params:{page:this.page,size:this.size}}));this.items.set(data.items);this.total.set(data.total);}
- async load(){await this.run(async()=>{this.categories.set(await firstValueFrom(this.http.get<Category[]>('/api/v1/categories')));await this.refreshList();});}
+ async load(){await this.run(async()=>{const [categories,collections,attributes]=await Promise.all([
+  firstValueFrom(this.http.get<Category[]>('/api/v1/admin/categories')),firstValueFrom(this.http.get<Collection[]>('/api/v1/admin/collections')),firstValueFrom(this.http.get<AttributeDefinition[]>('/api/v1/admin/attributes'))]);
+  this.categories.set(categories);this.collections.set(collections);this.attributes.set(attributes);await this.refreshList();});}
  name(p:Product){return (p.draft??p.published)?.name??p.slug;}
  state(p:Product){return p.archived?'Archivado':p.draft?(p.published?'Cambios sin publicar':'Borrador'):'Publicado';}
  newProduct(form:NgForm){if(form.dirty&&!confirm('¿Descartar los cambios sin guardar?'))return;this.selected.set(null);this.slug='';this.draft=this.blank();this.confirmedArchive.set(false);form.form.markAsPristine();form.form.markAsUntouched();this.error.set('');this.notice.set('');}
  async open(p:Product,form:NgForm){if(form.dirty&&!confirm('¿Descartar los cambios sin guardar?'))return;await this.run(async()=>{const data=await firstValueFrom(this.http.get<Product>('/api/v1/admin/products/'+p.id));this.setProduct(data);await this.loadMedia(data.id);form.form.markAsPristine();});}
- private setProduct(p:Product){this.selected.set(p);this.slug=p.slug;this.draft=structuredClone(p.draft??p.published??this.blank());this.confirmedArchive.set(false);}
+ private setProduct(p:Product){this.selected.set(p);this.slug=p.slug;this.draft=structuredClone(p.draft??p.published??this.blank());this.draft.collectionIds??=[];this.confirmedArchive.set(false);}
  addVariant(form:NgForm){if(this.draft.variants.length>=50)return;this.draft.variants.push({sku:'',attributes:{talla:'',color:''},price:0.01,enabled:true});form.form.markAsDirty();}
  removeVariant(index:number,form:NgForm){this.draft.variants.splice(index,1);form.form.markAsDirty();}
- private payload():Content{return {...this.draft,imageUrl:this.draft.imageUrl?.trim()||null,
+ private payload():Content{return {...this.draft,imageUrl:this.draft.imageUrl?.trim()||null,collectionIds:this.draft.collectionIds??[],
  variants:this.draft.variants.map(v=>({sku:v.sku.trim(),price:Number(v.price),enabled:v.enabled,attributes:Object.fromEntries(Object.entries(v.attributes).filter(([,value])=>value.trim()).map(([key,value])=>[key,value.trim()]))}))};}
  async save(form:NgForm){if(form.invalid||this.busy())return;await this.run(async()=>{const p=this.selected();const draft=this.payload();
  const result=await firstValueFrom(p?this.http.put<Product>('/api/v1/admin/products/'+p.id+'/draft',{version:p.version,draft}):this.http.post<Product>('/api/v1/admin/products',{slug:this.slug,draft}));
  this.setProduct(result);form.form.markAsPristine();await this.refreshList();this.notice.set('Borrador guardado. Publícalo para mostrar los cambios en la tienda.');});}
  async publish(form:NgForm){const p=this.selected();if(!p?.draft||form.dirty||this.busy())return;await this.run(async()=>{this.setProduct(await firstValueFrom(this.http.post<Product>('/api/v1/admin/products/'+p.id+'/publish',{version:p.version})));form.form.markAsPristine();await this.refreshList();this.notice.set('Producto publicado. Ya está disponible en la tienda.');});}
  async archive(form:NgForm){const p=this.selected();if(!p||!this.confirmedArchive()||this.busy())return;await this.run(async()=>{await firstValueFrom(this.http.delete('/api/v1/admin/products/'+p.id,{params:{version:p.version}}));this.setProduct(await firstValueFrom(this.http.get<Product>('/api/v1/admin/products/'+p.id)));form.form.markAsPristine();await this.refreshList();this.notice.set('Producto archivado; dejó de mostrarse en la tienda.');});}
- async createCategory(form:NgForm){if(form.invalid||this.busy())return;await this.run(async()=>{const c=await firstValueFrom(this.http.post<Category>('/api/v1/admin/categories',{name:this.categoryName,slug:this.categorySlug}));this.categories.update(rows=>[...rows,c]);this.categoryName='';this.categorySlug='';form.resetForm();this.notice.set('Categoría creada. Ya puedes seleccionarla en el producto.');});}
+ async createCategory(form:NgForm){if(form.invalid||this.busy())return;await this.run(async()=>{const c=await firstValueFrom(this.http.post<Category>('/api/v1/admin/categories',{name:this.categoryName,slug:this.categorySlug,parentId:this.categoryParent||null,description:this.categoryDescription,displayOrder:0,active:true}));this.categories.update(rows=>[...rows,c]);this.categoryName='';this.categorySlug='';this.categoryParent='';this.categoryDescription='';form.resetForm();this.notice.set('Categoría creada. Ya puedes seleccionarla en el producto.');});}
+ async createCollection(form:NgForm){if(form.invalid||this.busy())return;await this.run(async()=>{const row=await firstValueFrom(this.http.post<Collection>('/api/v1/admin/collections',{name:this.collectionName,slug:this.collectionSlug,description:this.collectionDescription,displayOrder:0,active:true}));this.collections.update(rows=>[...rows,row]);this.collectionName='';this.collectionSlug='';this.collectionDescription='';form.resetForm();this.notice.set('Colección creada.');});}
+ async addOption(attribute:AttributeDefinition){const value=(this.optionValues[attribute.code]??'').trim();if(!value||this.busy())return;await this.run(async()=>{await firstValueFrom(this.http.post('/api/v1/admin/attributes/'+attribute.id+'/options',{value,label:value,displayOrder:attribute.options.length*10+10,active:true}));this.optionValues[attribute.code]='';this.attributes.set(await firstValueFrom(this.http.get<AttributeDefinition[]>('/api/v1/admin/attributes')));this.notice.set('Opción agregada a '+attribute.name+'.');});}
+ attributeOptions(code:string){return this.attributes().find(item=>item.code===code)?.options??[];}
+ categoryLabel(category:Category){const parent=this.categories().find(item=>item.id===category.parent_id);return parent?parent.name+' / '+category.name:category.name;}
+ collectionSelected(id:string){return (this.draft.collectionIds??[]).includes(id);}
+ toggleCollection(id:string,selected:boolean,form:NgForm){const values=new Set(this.draft.collectionIds??[]);selected?values.add(id):values.delete(id);this.draft.collectionIds=[...values];form.form.markAsDirty();}
  async changePage(delta:number){if(this.busy())return;this.page+=delta;await this.run(()=>this.refreshList());}
  private async loadMedia(productId:string){this.media.set(await firstValueFrom(this.http.get<MediaAsset[]>('/api/v1/admin/products/'+productId+'/media')));}
  async selectImage(event:Event,form:NgForm){
