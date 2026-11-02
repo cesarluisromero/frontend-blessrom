@@ -2,6 +2,7 @@ import { Component, inject, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
+import { ActivatedRoute } from '@angular/router';
 import { Category, Collection, Product, Page, money, safeImage, errorMessage } from '../../../../shared/commerce';
 @Component({selector:'app-catalog',imports:[FormsModule,RouterLink],template:`
 <main><p class="eyebrow">Blessrom / Catálogo</p><h1>Encuentra tu estilo.</h1>
@@ -16,9 +17,10 @@ import { Category, Collection, Product, Page, money, safeImage, errorMessage } f
 styles:[`main{max-width:1300px;margin:auto;padding:40px 6%;min-height:65vh}h1{font-size:46px}form{display:flex;gap:20px;align-items:end;flex-wrap:wrap;margin:30px 0}label{font-size:14px}input,select{display:block;padding:13px;margin-top:8px;border:1px solid var(--line);border-radius:5px;font:inherit}.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:25px}.card{background:white;border:1px solid var(--line);padding:15px;border-radius:8px}.card img,.placeholder{display:block;width:100%;height:auto;aspect-ratio:4/5;object-fit:cover;object-position:center top;background:#e9edf2}.placeholder{display:grid;place-items:center;font:30px Georgia;color:#697d94}.card h2{font-size:23px}.pagination{display:flex;gap:20px;align-items:center;margin-top:35px}@media(max-width:800px){.grid{grid-template-columns:repeat(2,1fr)}}@media(max-width:480px){.grid{grid-template-columns:1fr}}`]})
 export class Catalog {
  private readonly http=inject(HttpClient);
+ private readonly route=inject(ActivatedRoute);
  readonly items=signal<Product[]>([]);readonly categories=signal<Category[]>([]);readonly collections=signal<Collection[]>([]);readonly total=signal(0);readonly loading=signal(false);readonly error=signal('');
  query='';category='';collection='';page=0;readonly size=12;readonly image=safeImage;
- constructor(){this.http.get<Category[]>('/api/v1/categories').subscribe({next:c=>this.categories.set(c),error:()=>this.error.set('No pudimos cargar las categorías.')});this.http.get<Collection[]>('/api/v1/collections').subscribe({next:c=>this.collections.set(c)});this.load();}
+ constructor(){this.collection=this.route.snapshot.queryParamMap.get('collection')??'';this.category=this.route.snapshot.queryParamMap.get('category')??'';this.http.get<Category[]>('/api/v1/categories').subscribe({next:c=>this.categories.set(c),error:()=>this.error.set('No pudimos cargar las categorías.')});this.http.get<Collection[]>('/api/v1/collections').subscribe({next:c=>this.collections.set(c)});this.load();}
  categoryLabel(category:Category){const parent=this.categories().find(item=>item.id===category.parent_id);return parent?parent.name+' / '+category.name:category.name;}
  price(p:Product){return money(Math.min(...(p.content?.variants.map(v=>Number(v.price))??[0])));}
  search(){if(this.loading())return;this.page=0;this.load();}

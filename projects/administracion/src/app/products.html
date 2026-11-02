@@ -16,7 +16,15 @@
 <label>Nombre<input name="collectionName" [(ngModel)]="collectionName" required maxlength="120" placeholder="Verano amazónico"></label>
 <label>Identificador URL<input name="collectionSlug" [(ngModel)]="collectionSlug" required pattern="[a-z0-9]+(?:-[a-z0-9]+)*" maxlength="120" placeholder="verano-amazonico"></label>
 <label>Descripción<textarea name="collectionDescription" [(ngModel)]="collectionDescription" maxlength="500" rows="2"></textarea></label>
-<button [disabled]="collectionForm.invalid||busy()">Crear colección</button></form></details>
+<button [disabled]="collectionForm.invalid||busy()">Crear colección</button></form>
+@if(collections().length){<hr><h3>Merchandising de portada</h3><p><small>Destaca hasta seis colecciones. El orden menor aparece primero.</small></p>
+@for(c of collections();track c.id){<article class="attribute-options"><strong>{{c.name}}</strong>
+<label class="check"><input type="checkbox" [(ngModel)]="c.featured" [name]="'featured-'+c.id"> Mostrar en portada</label>
+<label class="check"><input type="checkbox" [(ngModel)]="c.active" [name]="'active-'+c.id"> Activa</label>
+<label>Orden<input type="number" [(ngModel)]="c.display_order" [name]="'order-'+c.id" min="0" max="9999"></label>
+<label>Imagen de portada WebP (HTTPS)<input type="url" [(ngModel)]="c.cover_image_url" [name]="'cover-'+c.id" pattern="https://[^\s]+" maxlength="2000" placeholder="https://media.blessrom.com/..."></label>
+<button type="button" (click)="saveCollection(c)" [disabled]="busy()">Guardar portada</button></article>}}
+</details>
 <details><summary>Opciones de talla y color</summary>@for(attribute of attributes();track attribute.id){<div class="attribute-options"><strong>{{attribute.name}}</strong><small>{{attribute.options.length}} opciones configuradas</small><div class="row"><input [(ngModel)]="optionValues[attribute.code]" [name]="'option-'+attribute.code" maxlength="100" [placeholder]="'Nueva opción de '+attribute.name.toLowerCase()"><button type="button" (click)="addOption(attribute)" [disabled]="busy()||!optionValues[attribute.code]">Agregar</button></div></div>}</details>
 </section>
 <section><form #editor="ngForm" (ngSubmit)="save(editor)"><fieldset [disabled]="busy()"><h2>{{selected()?'Editar producto':'Nuevo producto'}}</h2>
