@@ -138,6 +138,10 @@ export class AnalyticsService {
       ad_personalization: 'denied',
     });
     if (!this.containerId || this.document.getElementById('blessrom-gtm')) return;
+    window.dataLayer.push({
+      event: 'gtm.js',
+      'gtm.start': Date.now(),
+    });
     const script = this.document.createElement('script');
     script.id = 'blessrom-gtm';
     script.async = true;

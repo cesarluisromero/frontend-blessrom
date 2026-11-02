@@ -9,6 +9,7 @@ describe('AnalyticsService', () => {
   beforeEach(() => {
     localStorage.clear();
     window.dataLayer = [];
+    document.getElementById('blessrom-gtm')?.remove();
     document
       .querySelector<HTMLMetaElement>('meta[name="blessrom-gtm-id"]')
       ?.setAttribute('content', '');
@@ -29,6 +30,22 @@ describe('AnalyticsService', () => {
       search_term: 'polo azul',
       results_count: 2,
     });
+  });
+
+  it('queues the GTM bootstrap event before loading the container', () => {
+    TestBed.resetTestingModule();
+    const meta = document.createElement('meta');
+    meta.name = 'blessrom-gtm-id';
+    meta.content = 'GTM-TEST123';
+    document.head.appendChild(meta);
+    TestBed.configureTestingModule({ providers: [provideRouter([])] });
+    service = TestBed.inject(AnalyticsService);
+
+    service.accept();
+
+    expect(window.dataLayer?.some((item) => item.event === 'gtm.js')).toBe(true);
+    expect(document.getElementById('blessrom-gtm')).not.toBeNull();
+    meta.remove();
   });
 
   it('records a purchase only once', () => {
