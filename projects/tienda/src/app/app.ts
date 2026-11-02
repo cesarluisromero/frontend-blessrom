@@ -4,7 +4,7 @@ import {HttpClient} from '@angular/common/http';
 import {FormsModule} from '@angular/forms';
 import {firstValueFrom} from 'rxjs';
 import { CartService } from './cart.service';
-import {money, safeImage} from '../../../../shared/commerce';
+import {Category, Collection, money, safeImage} from '../../../../shared/commerce';
 type ChatMessage={role:'user'|'assistant';content:string;products?:AssistantProduct[]};
 type AssistantProduct={id:string;slug:string;name:string;imageUrl?:string;price:number|string;available:number};
 type AssistantResponse={reply:string;products:AssistantProduct[];poweredByAi:boolean};
@@ -14,6 +14,9 @@ type AssistantResponse={reply:string;products:AssistantProduct[];poweredByAi:boo
 })
 export class App {
  readonly chatOpen = signal(false);
+ readonly menuOpen = signal(false);
+ readonly categories = signal<Category[]>([]);
+ readonly collections = signal<Collection[]>([]);
  readonly chatBusy = signal(false);
  readonly chatError = signal('');
  readonly failedProductImages = signal<ReadonlySet<string>>(new Set());
@@ -22,6 +25,11 @@ export class App {
  draft='';
  readonly cart=inject(CartService);
  private readonly http=inject(HttpClient);
+
+ constructor(){
+  this.http.get<Category[]>('/api/v1/categories').subscribe({next:value=>this.categories.set(value)});
+  this.http.get<Collection[]>('/api/v1/collections').subscribe({next:value=>this.collections.set(value)});
+ }
 
  productImage(product:AssistantProduct):string|null {
   return this.failedProductImages().has(product.id) ? null : safeImage(product.imageUrl);

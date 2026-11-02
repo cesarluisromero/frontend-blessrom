@@ -1,7 +1,11 @@
 <div class="announcement">BLESSROM · Una nueva forma de vestir tu día</div>
 <header>
  <a routerLink="/" class="brand" aria-label="Blessrom, inicio"><img src="/blessrom-logo.webp" alt="Blessrom C &amp; M" width="220" height="74"></a>
- <nav aria-label="Navegación principal"><a routerLink="/">Inicio</a><a routerLink="/catalogo">Catálogo</a><a routerLink="/cuenta">Mi cuenta</a><a routerLink="/carrito">Carrito ({{cart.count()}})</a></nav>
+ <button class="menu-trigger" (click)="menuOpen.set(!menuOpen())" [attr.aria-expanded]="menuOpen()" aria-label="Abrir menú">Menú</button>
+ <nav aria-label="Navegación principal" [class.open]="menuOpen()"><a routerLink="/" (click)="menuOpen.set(false)">Inicio</a><a routerLink="/catalogo" (click)="menuOpen.set(false)">Catálogo</a>
+  @if(categories().length){<details><summary>Categorías</summary><div class="nav-panel">@for(category of categories();track category.id){<a [routerLink]="['/categoria',category.slug]" (click)="menuOpen.set(false)">{{category.name}}</a>}</div></details>}
+  @if(collections().length){<details><summary>Colecciones</summary><div class="nav-panel">@for(collection of collections();track collection.id){<a [routerLink]="['/coleccion',collection.slug]" (click)="menuOpen.set(false)">{{collection.name}}</a>}</div></details>}
+  <a routerLink="/cuenta" (click)="menuOpen.set(false)">Mi cuenta</a><a routerLink="/carrito" (click)="menuOpen.set(false)">Carrito ({{cart.count()}})</a></nav>
  <span class="muted">Perú · S/</span>
 </header>
 <router-outlet />
