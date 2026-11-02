@@ -2,6 +2,7 @@ import { Component, inject, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { RouterLink } from '@angular/router';
 import { Storefront, StorefrontCollection, money, safeImage } from '../../../../shared/commerce';
+import { SeoService } from './seo.service';
 @Component({
  selector:'app-home',imports:[RouterLink],
  template: `
@@ -24,8 +25,9 @@ import { Storefront, StorefrontCollection, money, safeImage } from '../../../../
 })
 export class Home {
  private readonly http=inject(HttpClient);
+ private readonly seo=inject(SeoService);
  readonly collections=signal<StorefrontCollection[]>([]);readonly image=safeImage;
- constructor(){this.http.get<Storefront>('/api/v1/storefront').subscribe({next:value=>this.collections.set(value.featuredCollections)});}
+ constructor(){this.seo.update({title:'Blessrom | Moda desde Tarapoto',description:'Descubre prendas Blessrom inspiradas en la naturaleza y energía de Tarapoto. Compra moda en Perú con precios en soles.',path:'/',jsonLd:{'@context':'https://schema.org','@type':'WebSite',name:'Blessrom',url:'https://blessrom.com',potentialAction:{'@type':'SearchAction',target:'https://blessrom.com/catalogo?q={search_term_string}','query-input':'required name=search_term_string'}}});this.http.get<Storefront>('/api/v1/storefront').subscribe({next:value=>this.collections.set(value.featuredCollections)});}
  firstImage(collection:StorefrontCollection){return safeImage(collection.products.find(product=>product.content?.imageUrl)?.content?.imageUrl);}
  price(collection:StorefrontCollection){const values=collection.products.flatMap(product=>product.content?.variants.map(variant=>Number(variant.price))??[]);return values.length?money(Math.min(...values)):'';}
 }

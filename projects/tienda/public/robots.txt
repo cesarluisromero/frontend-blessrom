@@ -1,0 +1,6 @@
+User-agent: *
+Allow: /
+Disallow: /cuenta
+Disallow: /carrito
+Disallow: /checkout
+Sitemap: https://api.blessrom.com/api/v1/seo/sitemap.xml
