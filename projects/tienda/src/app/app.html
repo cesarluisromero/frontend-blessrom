@@ -1,43 +1,151 @@
 <div class="announcement">BLESSROM · Una nueva forma de vestir tu día</div>
 <header>
- <a routerLink="/" class="brand" aria-label="Blessrom, inicio"><img src="/blessrom-logo.webp" alt="Blessrom C &amp; M" width="220" height="74"></a>
- <button class="menu-trigger" (click)="menuOpen.set(!menuOpen())" [attr.aria-expanded]="menuOpen()" aria-label="Abrir menú">Menú</button>
- <nav aria-label="Navegación principal" [class.open]="menuOpen()"><a routerLink="/" (click)="menuOpen.set(false)">Inicio</a><a routerLink="/catalogo" (click)="menuOpen.set(false)">Catálogo</a>
-  @if(categories().length){<details><summary>Categorías</summary><div class="nav-panel">@for(category of categories();track category.id){<a [routerLink]="['/categoria',category.slug]" (click)="menuOpen.set(false)">{{category.name}}</a>}</div></details>}
-  @if(collections().length){<details><summary>Colecciones</summary><div class="nav-panel">@for(collection of collections();track collection.id){<a [routerLink]="['/coleccion',collection.slug]" (click)="menuOpen.set(false)">{{collection.name}}</a>}</div></details>}
-  <a routerLink="/cuenta" (click)="menuOpen.set(false)">Mi cuenta</a><a routerLink="/carrito" (click)="menuOpen.set(false)">Carrito ({{cart.count()}})</a></nav>
- <span class="muted">Perú · S/</span>
+  <a routerLink="/" class="brand" aria-label="Blessrom, inicio"
+    ><img src="/blessrom-logo.webp" alt="Blessrom C &amp; M" width="220" height="74"
+  /></a>
+  <button
+    class="menu-trigger"
+    (click)="menuOpen.set(!menuOpen())"
+    [attr.aria-expanded]="menuOpen()"
+    aria-label="Abrir menú"
+  >
+    Menú
+  </button>
+  <nav aria-label="Navegación principal" [class.open]="menuOpen()">
+    <a routerLink="/" (click)="menuOpen.set(false)">Inicio</a
+    ><a routerLink="/catalogo" (click)="menuOpen.set(false)">Catálogo</a>
+    @if (categories().length) {
+      <details>
+        <summary>Categorías</summary>
+        <div class="nav-panel">
+          @for (category of categories(); track category.id) {
+            <a [routerLink]="['/categoria', category.slug]" (click)="menuOpen.set(false)">{{
+              category.name
+            }}</a>
+          }
+        </div>
+      </details>
+    }
+    @if (collections().length) {
+      <details>
+        <summary>Colecciones</summary>
+        <div class="nav-panel">
+          @for (collection of collections(); track collection.id) {
+            <a [routerLink]="['/coleccion', collection.slug]" (click)="menuOpen.set(false)">{{
+              collection.name
+            }}</a>
+          }
+        </div>
+      </details>
+    }
+    <a routerLink="/cuenta" (click)="menuOpen.set(false)">Mi cuenta</a
+    ><a routerLink="/carrito" (click)="menuOpen.set(false)">Carrito ({{ cart.count() }})</a>
+  </nav>
+  <span class="muted">Perú · S/</span>
 </header>
 <router-outlet />
-<footer><a routerLink="/" class="brand"><img src="/blessrom-logo.webp" alt="Blessrom C &amp; M" width="220" height="74"></a><p>Estilo que nace entre la ciudad y la naturaleza.<br>Tarapoto, Perú.</p><small>Moda hoy. Nuevas posibilidades mañana.</small></footer>
-<button class="chat-trigger" (click)="chatOpen.set(true)" aria-label="Abrir asistente de Blessrom" [attr.aria-expanded]="chatOpen()">✧ Asistente</button>
-@if(chatOpen()) {
- <aside class="chat" aria-label="Asistente de Blessrom">
-  <div class="chat-head"><div><strong>Blessrom · Asistente IA</strong><small>Tu próxima experiencia de compra</small></div><button (click)="chatOpen.set(false)" aria-label="Cerrar asistente">✕</button></div>
-  <div class="chat-content" aria-live="polite">
-   @for(message of messages();track $index){
-    <div class="message" [class.user-message]="message.role==='user'">
-     <p class="bubble">{{message.content}}</p>
-     @if(message.products?.length){<div class="chat-products">
-      @for(product of message.products;track product.id){
-       <a class="chat-product" [routerLink]="['/producto',product.id]" (click)="chatOpen.set(false)">
-        @if(productImage(product);as imageUrl){
-         <img [src]="imageUrl" [alt]="product.name" width="54" height="68" loading="lazy" referrerpolicy="no-referrer" (error)="markProductImageAsFailed(product.id)">
-        }@else{<span class="chat-product-placeholder" aria-hidden="true">B</span>}
-        <span><strong>{{product.name}}</strong><small>{{money(product.price)}} · {{product.available}} disponibles</small></span>
-       </a>
-      }
-     </div>}
+<footer>
+  <a routerLink="/" class="brand"
+    ><img src="/blessrom-logo.webp" alt="Blessrom C &amp; M" width="220" height="74"
+  /></a>
+  <p>Estilo que nace entre la ciudad y la naturaleza.<br />Tarapoto, Perú.</p>
+  <small>Moda hoy. Nuevas posibilidades mañana.</small>
+  <button type="button" class="privacy-link" (click)="analytics.resetConsent()">
+    Preferencias de privacidad
+  </button>
+</footer>
+<button
+  class="chat-trigger"
+  (click)="chatOpen.set(true); analytics.assistant('open')"
+  aria-label="Abrir asistente de Blessrom"
+  [attr.aria-expanded]="chatOpen()"
+>
+  ✧ Asistente
+</button>
+@if (chatOpen()) {
+  <aside class="chat" aria-label="Asistente de Blessrom">
+    <div class="chat-head">
+      <div>
+        <strong>Blessrom · Asistente IA</strong><small>Tu próxima experiencia de compra</small>
+      </div>
+      <button (click)="chatOpen.set(false)" aria-label="Cerrar asistente">✕</button>
     </div>
-   }
-   @if(messages().length===1){<div class="chat-suggestions">
-    <button (click)="send('¿Qué prendas tienen disponibles?')">Prendas disponibles</button>
-    <button (click)="send('Busco algo azul')">Busco algo azul</button>
-    <button (click)="send('¿Hay promociones vigentes?')">Promociones</button>
-   </div>}
-   @if(chatBusy()){<p class="typing">Blessrom está buscando opciones…</p>}
-   @if(chatError()){<p class="chat-error">{{chatError()}}</p>}
-  </div>
-  <form class="chat-input" (ngSubmit)="send()"><input [(ngModel)]="draft" name="message" maxlength="800" autocomplete="off" aria-label="Mensaje al asistente" placeholder="Pregunta sobre productos o envíos…" [disabled]="chatBusy()"><button type="submit" [disabled]="chatBusy()||!draft.trim()" aria-label="Enviar mensaje">➤</button></form>
- </aside>
+    <div class="chat-content" aria-live="polite">
+      @for (message of messages(); track $index) {
+        <div class="message" [class.user-message]="message.role === 'user'">
+          <p class="bubble">{{ message.content }}</p>
+          @if (message.products?.length) {
+            <div class="chat-products">
+              @for (product of message.products; track product.id) {
+                <a
+                  class="chat-product"
+                  [routerLink]="['/producto', product.id]"
+                  (click)="chatOpen.set(false)"
+                >
+                  @if (productImage(product); as imageUrl) {
+                    <img
+                      [src]="imageUrl"
+                      [alt]="product.name"
+                      width="54"
+                      height="68"
+                      loading="lazy"
+                      referrerpolicy="no-referrer"
+                      (error)="markProductImageAsFailed(product.id)"
+                    />
+                  } @else {
+                    <span class="chat-product-placeholder" aria-hidden="true">B</span>
+                  }
+                  <span
+                    ><strong>{{ product.name }}</strong
+                    ><small
+                      >{{ money(product.price) }} · {{ product.available }} disponibles</small
+                    ></span
+                  >
+                </a>
+              }
+            </div>
+          }
+        </div>
+      }
+      @if (messages().length === 1) {
+        <div class="chat-suggestions">
+          <button (click)="send('¿Qué prendas tienen disponibles?')">Prendas disponibles</button>
+          <button (click)="send('Busco algo azul')">Busco algo azul</button>
+          <button (click)="send('¿Hay promociones vigentes?')">Promociones</button>
+        </div>
+      }
+      @if (chatBusy()) {
+        <p class="typing">Blessrom está buscando opciones…</p>
+      }
+      @if (chatError()) {
+        <p class="chat-error">{{ chatError() }}</p>
+      }
+    </div>
+    <form class="chat-input" (ngSubmit)="send()">
+      <input
+        [(ngModel)]="draft"
+        name="message"
+        maxlength="800"
+        autocomplete="off"
+        aria-label="Mensaje al asistente"
+        placeholder="Pregunta sobre productos o envíos…"
+        [disabled]="chatBusy()"
+      /><button type="submit" [disabled]="chatBusy() || !draft.trim()" aria-label="Enviar mensaje">
+        ➤
+      </button>
+    </form>
+  </aside>
+}
+@if (analytics.consent() === null) {
+  <aside class="consent" aria-label="Preferencias de analítica">
+    <strong>Tu privacidad en Blessrom</strong>
+    <p>
+      Usamos analítica para comprender el funcionamiento de la tienda y mejorar la experiencia. No
+      enviamos nombres, correos, teléfonos ni direcciones.
+    </p>
+    <div>
+      <button type="button" (click)="analytics.accept()">Aceptar analítica</button
+      ><button type="button" class="secondary" (click)="analytics.reject()">Solo necesarias</button>
+    </div>
+  </aside>
 }
