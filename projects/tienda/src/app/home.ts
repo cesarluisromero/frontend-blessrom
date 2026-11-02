@@ -12,7 +12,7 @@ import { Storefront, StorefrontCollection, money, safeImage } from '../../../../
  </section>
  <section class="values"><div><span>01 / IDENTIDAD</span><h2>Estilo con origen</h2><p>Una mirada contemporánea, inspirada en la energía de nuestra tierra.</p></div><div><span>02 / DESCUBRE</span><h2>Tu próximo favorito</h2><p>Explora las prendas publicadas en nuestro catálogo.</p></div><div><span>03 / EVOLUCIÓN</span><h2>Un mundo por venir</h2><p>Comenzamos con moda. La tecnología será parte de nuestro futuro.</p></div></section>
  @if(collections().length){<section class="featured"><p class="eyebrow">Edición Blessrom</p><h2>Colecciones destacadas</h2><div class="collection-grid">
- @for(collection of collections();track collection.id){<article class="collection"><a routerLink="/catalogo" [queryParams]="{collection:collection.id}">
+ @for(collection of collections();track collection.id){<article class="collection"><a [routerLink]="['/coleccion',collection.slug]">
  @if(image(collection.cover_image_url);as cover){<img [src]="cover" [alt]="collection.name" loading="lazy">}@else if(firstImage(collection);as productImage){<img [src]="productImage" [alt]="collection.name" loading="lazy">}@else{<div class="collection-placeholder">B</div>}
  <div><span>{{collection.products.length}} prendas</span><h3>{{collection.name}}</h3><p>{{collection.description}}</p><strong>Explorar colección ↗</strong></div></a></article>}
  </div></section>}
