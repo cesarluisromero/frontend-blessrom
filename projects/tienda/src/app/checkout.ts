@@ -165,6 +165,7 @@ export class Checkout {
   confirmed = false;
   readonly money = money;
   constructor() {
+    void this.cart.recoverOrder().then(o=>{if(o&&this.cart.token()){sessionStorage.setItem('blessrom-order-'+o.id,JSON.stringify({order:o,token:this.cart.token()}));this.cart.clear();void this.router.navigate(['/pedido',o.id]);}}).catch(()=>{});
     this.http.get<ShippingRate[]>('/api/v1/shipping-rates').subscribe({
       next: (r) => {
         this.rates.set(r);
@@ -263,6 +264,7 @@ export class Checkout {
       this.cart.clear();
       await this.router.navigate(['/pedido', o.id]);
     } catch (e) {
+      try {const o=await this.cart.recoverOrder();if(o&&this.cart.token()){sessionStorage.setItem('blessrom-order-'+o.id,JSON.stringify({order:o,token:this.cart.token()}));this.cart.clear();await this.router.navigate(['/pedido',o.id]);return;}}catch{/* Conserva el carrito y la clave para reintentar. */}
       this.quote = null;
       this.confirmed = false;
       this.error.set(errorMessage(e) + ' Calcula nuevamente el total.');

@@ -1,8 +1,15 @@
-<div class="announcement">BLESSROM · Una nueva forma de vestir tu día</div>
-<header>
+<a class="skip-link" href="#contenido">Ir al contenido</a>
+<div class="announcement">Desde Tarapoto, para tu día a día</div>
+<header class="site-header">
   <a routerLink="/" class="brand" aria-label="Blessrom, inicio"
     ><img src="/blessrom-logo.webp" alt="Blessrom C &amp; M" width="220" height="74"
   /></a>
+  <form class="site-search" (ngSubmit)="search()" role="search">
+    <label class="sr-only" for="global-search">Buscar por nombre o SKU</label>
+    <input id="global-search" name="search" [(ngModel)]="searchTerm" type="search" maxlength="100" placeholder="Buscar prendas por nombre o SKU" />
+    <button type="submit" aria-label="Buscar">⌕</button>
+  </form>
+  <div class="header-actions"><a routerLink="/cuenta"><span aria-hidden="true">♙</span> Mi cuenta</a><a routerLink="/carrito"><span aria-hidden="true">♧</span> Carrito <span class="cart-count">{{ cart.count() }}</span></a></div>
   <button
     class="menu-trigger"
     (click)="menuOpen.set(!menuOpen())"
@@ -12,8 +19,7 @@
     Menú
   </button>
   <nav aria-label="Navegación principal" [class.open]="menuOpen()">
-    <a routerLink="/" (click)="menuOpen.set(false)">Inicio</a
-    ><a routerLink="/catalogo" (click)="menuOpen.set(false)">Catálogo</a>
+    <a routerLink="/catalogo" [queryParams]="{sort:'newest'}">Novedades</a><a routerLink="/catalogo">Todo el catálogo</a>
     @if (categories().length) {
       <details>
         <summary>Categorías</summary>
@@ -38,30 +44,29 @@
         </div>
       </details>
     }
-    <a routerLink="/cuenta" (click)="menuOpen.set(false)">Mi cuenta</a
-    ><a routerLink="/carrito" (click)="menuOpen.set(false)">Carrito ({{ cart.count() }})</a>
   </nav>
-  <span class="muted">Perú · S/</span>
 </header>
-<router-outlet />
+<div id="contenido" tabindex="-1"><router-outlet /></div>
 <footer>
   <a routerLink="/" class="brand"
     ><img src="/blessrom-logo.webp" alt="Blessrom C &amp; M" width="220" height="74"
   /></a>
   <p>Estilo que nace entre la ciudad y la naturaleza.<br />Tarapoto, Perú.</p>
-  <small>Moda hoy. Nuevas posibilidades mañana.</small>
+  <small>Precios en soles · Compra como invitado · Cobertura de envío al finalizar</small>
   <button type="button" class="privacy-link" (click)="analytics.resetConsent()">
     Preferencias de privacidad
   </button>
 </footer>
+@if (!transactional() || chatOpen()) {
 <button
   class="chat-trigger"
   (click)="chatOpen.set(true); analytics.assistant('open')"
   aria-label="Abrir asistente de Blessrom"
   [attr.aria-expanded]="chatOpen()"
 >
-  ✧ Asistente
+  <span aria-hidden="true">♧</span> ¿Te ayudo?
 </button>
+}
 @if (chatOpen()) {
   <aside class="chat" aria-label="Asistente de Blessrom">
     <div class="chat-head">

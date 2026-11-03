@@ -1,11 +1,13 @@
 import { Component, signal, inject } from '@angular/core';
-import { RouterLink, RouterOutlet } from '@angular/router';
+import { NavigationEnd, Router, RouterLink, RouterOutlet } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
 import { firstValueFrom } from 'rxjs';
 import { CartService } from './cart.service';
 import { Category, Collection, money, safeImage } from '../../../../shared/commerce';
 import { AnalyticsService } from './analytics.service';
+import { StorefrontService } from './storefront.service';
+import { filter } from 'rxjs';
 type ChatMessage = { role: 'user' | 'assistant'; content: string; products?: AssistantProduct[] };
 type AssistantProduct = {
   id: string;
@@ -25,8 +27,10 @@ type AssistantResponse = { reply: string; products: AssistantProduct[]; poweredB
 export class App {
   readonly chatOpen = signal(false);
   readonly menuOpen = signal(false);
-  readonly categories = signal<Category[]>([]);
-  readonly collections = signal<Collection[]>([]);
+  readonly storefront = inject(StorefrontService);
+  readonly categories = this.storefront.categories;
+  readonly collections = this.storefront.collections;
+  readonly transactional = signal(false);
   readonly chatBusy = signal(false);
   readonly chatError = signal('');
   readonly failedProductImages = signal<ReadonlySet<string>>(new Set());
@@ -39,17 +43,23 @@ export class App {
     },
   ]);
   draft = '';
+  searchTerm = '';
   readonly cart = inject(CartService);
   readonly analytics = inject(AnalyticsService);
   private readonly http = inject(HttpClient);
+  private readonly router = inject(Router);
 
   constructor() {
-    this.http
-      .get<Category[]>('/api/v1/categories')
-      .subscribe({ next: (value) => this.categories.set(value) });
-    this.http
-      .get<Collection[]>('/api/v1/collections')
-      .subscribe({ next: (value) => this.collections.set(value) });
+    this.router.events.pipe(filter(event => event instanceof NavigationEnd)).subscribe(() => {
+      this.menuOpen.set(false);
+      this.chatOpen.set(false);
+      this.transactional.set(/^\/(carrito|checkout|pedido)(\/|$)/.test(this.router.url));
+      this.searchTerm = this.router.parseUrl(this.router.url).queryParams['q'] ?? '';
+    });
+  }
+
+  search() {
+    void this.router.navigate(['/catalogo'], { queryParams: { q: this.searchTerm.trim() || null } });
   }
 
   productImage(product: AssistantProduct): string | null {

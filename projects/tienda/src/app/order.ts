@@ -1,4 +1,4 @@
-import { Component, effect, signal, inject } from '@angular/core';
+import { Component, effect, signal, inject, OnDestroy } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { FormsModule, NgForm } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
@@ -6,6 +6,7 @@ import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 import { Order, errorMessage, money } from '../../../../shared/commerce';
 import { AnalyticsService } from './analytics.service';
+import { StorefrontService } from './storefront.service';
 interface SavedOrder {
   order: Order;
   token: string;
@@ -21,13 +22,13 @@ interface SavedOrder {
       <p class="eyebrow">Pedido recibido</p>
       <h1>Gracias por tu compra</h1>
       <p>
-        Pedido <strong>{{ o.id }}</strong>
+        Pedido <strong>{{ o.orderNumber ?? o.id }}</strong>
       </p>
       <p>
         Estado: <strong>{{ status(o.status) }}</strong>
       </p>
       <p>
-        La reserva vence: {{ o.reservation_expires_at | date: 'dd/MM/yyyy HH:mm' : '-0500' }} (Perú)
+        @if(o.status === 'PENDING_PAYMENT'){La reserva vence: {{ o.reservation_expires_at | date: 'dd/MM/yyyy HH:mm' : '-0500' }} (Perú)}
       </p>
       <section>
         @for (i of o.items; track i.variant_id) {
@@ -78,22 +79,24 @@ interface SavedOrder {
           }
         }
         @if (!o.payment || o.payment.status === 'REJECTED') {
-          <section class="online">
+          @if(paymentEnabled('MERCADO_PAGO')){<section class="online">
             <h2>Pago en línea</h2>
             <p>Tarjetas, Yape y medios disponibles en Mercado Pago.</p>
             <button type="button" [disabled]="busy()" (click)="startMercadoPago()">
               Pagar con Mercado Pago
             </button>
-          </section>
+          </section>}
+          @if(hasManualPayment()){
           <form #paymentForm="ngForm" (ngSubmit)="submitPayment(paymentForm)">
             <fieldset [disabled]="busy()">
               <h2>O registrar un pago manual</h2>
               <label
                 >Método<select name="method" [(ngModel)]="paymentMethod" required>
-                  <option value="YAPE">Yape</option>
-                  <option value="PLIN">Plin</option>
-                  <option value="BANK_TRANSFER">Transferencia bancaria</option>
-                  <option value="CASH_ON_DELIVERY">Pago contra entrega</option>
+                  <option value="" disabled>Selecciona un medio de pago</option>
+                  @if(paymentEnabled('YAPE')){<option value="YAPE">Yape</option>}
+                  @if(paymentEnabled('PLIN')){<option value="PLIN">Plin</option>}
+                  @if(paymentEnabled('BANK_TRANSFER')){<option value="BANK_TRANSFER">Transferencia bancaria</option>}
+                  @if(paymentEnabled('CASH_ON_DELIVERY')){<option value="CASH_ON_DELIVERY">Pago contra entrega</option>}
                 </select></label
               >
               @if (paymentMethod !== 'CASH_ON_DELIVERY') {
@@ -119,7 +122,7 @@ interface SavedOrder {
                 Enviar para revisión
               </button>
             </fieldset>
-          </form>
+          </form>}
         }
         <button class="cancel" [disabled]="busy()" (click)="cancel()">
           Cancelar pedido y liberar stock
@@ -174,19 +177,21 @@ interface SavedOrder {
     `,
   ],
 })
-export class OrderPage {
+export class OrderPage implements OnDestroy {
   private http = inject(HttpClient);
+  readonly storefront = inject(StorefrontService);
   private analytics = inject(AnalyticsService);
   private id = inject(ActivatedRoute).snapshot.paramMap.get('id') ?? '';
   private saved = this.read();
   order = signal<Order | null>(this.saved?.order ?? null);
   busy = signal(false);
   error = signal('');
-  paymentMethod = 'YAPE';
+  paymentMethod = '';
   reference = '';
   proof: string | null = null;
   proofType: string | null = null;
   readonly money = money;
+  private polling:ReturnType<typeof setInterval>|null=null;
   private readonly trackPurchase = effect(() => {
     const order = this.order();
     if (order && (order.status === 'PAYMENT_CONFIRMED' || order.payment?.status === 'APPROVED'))
@@ -194,7 +199,11 @@ export class OrderPage {
   });
   constructor() {
     if (this.saved) void this.refresh();
+    this.polling=setInterval(()=>{if(document.visibilityState==='visible'&&this.order()?.status==='PENDING_PAYMENT')void this.refresh();},20000);
   }
+  ngOnDestroy(){if(this.polling)clearInterval(this.polling);}
+  paymentEnabled(method:string){return this.storefront.data()?.paymentMethods?.includes(method)??false;}
+  hasManualPayment(){return ['YAPE','PLIN','BANK_TRANSFER','CASH_ON_DELIVERY'].some(method=>this.paymentEnabled(method));}
   private read() {
     try {
       return JSON.parse(

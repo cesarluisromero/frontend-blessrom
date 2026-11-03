@@ -1,7 +1,12 @@
 export interface Category { id:string; name:string; slug:string; parent_id:string|null; description:string; display_order:number; active:boolean; version:number; }
 export interface Collection { id:string; name:string; slug:string; description:string; starts_at:string|null; ends_at:string|null; display_order:number; active:boolean; featured:boolean; cover_image_url:string|null; version:number; }
 export interface StorefrontCollection extends Collection { products:Product[]; }
-export interface Storefront { featuredCollections:StorefrontCollection[]; }
+export interface HomeTarget { type:'catalog'|'category'|'collection'|'collections'; id?:string; }
+export interface HomeLink { label:string; target:HomeTarget; }
+export interface HomeContent { eyebrow:string; title:string; description:string; heroAssetId:string|null; heroAlt:string; frameX:number; frameY:number; primary:HomeLink; secondary:HomeLink|null; shortcuts:HomeLink[]; }
+export interface StorefrontHome { revisionId:string; content:HomeContent; heroMedia?:ProductMedia|null; }
+export interface HomeAdmin { version:number; draft:HomeContent|null; published:HomeContent|null; publishedAt?:string|null; publishedRevisionId?:string|null; draftMedia?:ProductMedia|null; publishedMedia?:ProductMedia|null; }
+export interface Storefront { featuredCollections:StorefrontCollection[]; home?:StorefrontHome|null; paymentMethods?:string[]; }
 export interface MerchandisingLanding<T extends Category|Collection> { entity:T; products:Page<Product>; }
 export interface AttributeOption { id:string; attribute_id:string; value:string; label:string; swatch:string|null; display_order:number; active:boolean; }
 export interface AttributeDefinition { id:string; code:string; name:string; type:'TEXT'|'SIZE'|'COLOR'; filterable:boolean; display_order:number; active:boolean; options:AttributeOption[]; }
@@ -10,9 +15,11 @@ export type MediaVariant='original'|'large'|'medium'|'thumbnail';
 export interface ProductMedia { id:string; alt_text:string|null; is_primary:boolean; display_order?:number; urls:Record<MediaVariant,string>; }
 export interface Content { name:string; description:string; categoryId:string; imageUrl:string|null; media?:ProductMedia[]; variants:Variant[]; collectionIds?:string[]; }
 export interface Product { id:string; slug:string; version:number; archived:boolean; draft?:Content|null; published?:Content|null; content?:Content; }
-export interface Page<T> { items:T[]; page:number; size:number; total:number; }
+export interface FacetOption {value:string;label:string;count:number}
+export interface ProductFacets {colors:FacetOption[];sizes:FacetOption[];price:{min:number|string|null;max:number|string|null}}
+export interface Page<T> { items:T[]; page:number; size:number; total:number; facets?:ProductFacets; }
 export interface CartLine { variantId:string; sku:string; quantity:number; name?:string; attributes?:Record<string,string>; unitPrice?:string; lineTotal?:string; available:boolean; }
-export interface Cart { id:string; status:string; expiresAt:string; items:CartLine[]; }
+export interface Cart { id:string; status:string; expiresAt:string; items:CartLine[]; orderId?:string|null; }
 export interface CartAccess { id:string; accessToken:string; expiresAt:string; }
 export interface ShippingRate { id:string; version:number; department_name:string; province_name:string; district_code:string; district_name:string; amount:string|number; active:boolean; }
 export interface Promotion { id:string; version:number; name:string; code:string; discount_type:'PERCENT'|'FIXED'; discount_value:string|number; minimum_subtotal:string|number; usage_limit:number|null; usage_count:number; starts_at:string; ends_at:string; active:boolean; }
@@ -23,7 +30,10 @@ export interface Payment { version:number; status:'PENDING_PROVIDER'|'SUBMITTED'
 export interface NotificationRecord { id:string; event:string; recipient:string; status:'PENDING'|'SENT'|'FAILED'; attempts:number; last_error:string|null; created_at:string; sent_at:string|null; }
 export interface Shipment { version:number; carrier:string; tracking_number:string; estimated_delivery:string; notes:string|null; shipped_at:string|null; delivered_at:string|null; updated_at:string; }
 export interface ReturnCase { id:string; version:number; status:'REQUESTED'|'APPROVED'|'REJECTED'|'RECEIVED'|'REFUNDED'|'EXCHANGED'; requested_resolution:'REFUND'|'EXCHANGE'; reason:string; admin_note:string|null; resolution_reference:string|null; restocked:boolean; provider_refund_id?:string|null; refund_amount?:string|null; refund_status?:string|null; refund_requested_at?:string|null; created_at:string; updated_at:string; resolved_at:string|null; items:{variant_id:string;sku:string;name:string;quantity:number}[]; }
-export interface Order { id:string; version:number; status:string; currency:'PEN'; subtotal:string; discount?:string; coupon_code?:string|null; shipping:string; total:string; customer:Customer; created_at:string; reservation_expires_at:string; items:OrderLine[]; history:{status:string;actor:string;created_at:string}[]; payment:Payment|null; shipment?:Shipment|null; returns?:ReturnCase[]; notifications?:NotificationRecord[]; }
+export interface Order { id:string; orderNumber?:string; version:number; status:string; currency:'PEN'; subtotal:string; discount?:string; coupon_code?:string|null; shipping:string; total:string; customer:Customer; created_at:string; reservation_expires_at:string; items:OrderLine[]; history:{status:string;actor:string;created_at:string}[]; payment:Payment|null; paymentAttempts?:Pick<Payment,'method'|'status'|'reference'|'review_note'|'submitted_at'|'reviewed_at'>[]; shipment?:Shipment|null; returns?:ReturnCase[]; notifications?:NotificationRecord[]; }
+export interface InventoryRow {variant_id:string;product_id:string;sku:string;name:string;on_hand:number;reserved:number;available:number;version:number;published:boolean;imageUrl?:string|null}
+export interface ActivityEvent {id:string;type:string;label:string;entityId:string;entityType:string;createdAt:string;actor:string}
+export interface OperationalActions {paymentsToReview:number;ordersToPrepare:number;readyToShip:number;returnsPending:number;paymentExceptions:number;criticalStock:number}
 export const money = (value:string|number) => new Intl.NumberFormat('es-PE',{style:'currency',currency:'PEN'}).format(Number(value));
 export function safeImage(url:string|null|undefined):string|null {
  try { const parsed=new URL(url ?? ''); return parsed.protocol==='https:' ? parsed.href : null; } catch { return null; }

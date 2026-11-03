@@ -2,10 +2,13 @@ import { Component, inject, signal } from '@angular/core';
 import { FormsModule, NgForm } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { Category, Collection, AttributeDefinition, Content, Product, Page, ProductMedia, MediaVariant, errorMessage, money } from '../../../../shared/commerce';
-@Component({selector:'app-products',imports:[FormsModule],templateUrl:'./products.html',styleUrls:['./products.scss','./products-gallery.scss']})
+@Component({selector:'app-products',imports:[FormsModule,RouterLink],templateUrl:'./products.html',styleUrls:['./products.scss','./products-gallery.scss']})
 export class Products {
  private readonly http=inject(HttpClient);
+ private readonly route=inject(ActivatedRoute,{optional:true});private readonly router=inject(Router,{optional:true});query='';statusFilter='';
+ readonly editorTab=signal<'content'|'variants'|'images'|'publication'>('content');
  readonly items=signal<Product[]>([]);readonly categories=signal<Category[]>([]);readonly collections=signal<Collection[]>([]);readonly attributes=signal<AttributeDefinition[]>([]);
  readonly selected=signal<Product|null>(null);readonly busy=signal(false);readonly error=signal('');readonly notice=signal('');
  readonly total=signal(0);page=0;readonly size=12;
@@ -13,16 +16,17 @@ export class Products {
  slug='';categoryName='';categorySlug='';categoryParent='';categoryDescription='';collectionName='';collectionSlug='';collectionDescription='';
  optionValues:Record<string,string>={};draft:Content=this.blank();
  readonly money=money; readonly confirmedArchive=signal(false);
- constructor(){void this.load();}
+ constructor(){this.query=this.route?.snapshot.queryParamMap.get('q')??'';this.statusFilter=this.route?.snapshot.queryParamMap.get('status')??'';void this.load();}
  private blank():Content{return {name:'',description:'',categoryId:'',imageUrl:null,collectionIds:[],variants:[{sku:'',price:0.01,enabled:true,attributes:{talla:'',color:''}}]};}
  private async run(action:()=>Promise<void>){if(this.busy())return;this.busy.set(true);this.error.set('');this.notice.set('');try{await action();}catch(e){this.error.set(errorMessage(e));}finally{this.busy.set(false);}}
- private async refreshList(){const data=await firstValueFrom(this.http.get<Page<Product>>('/api/v1/admin/products',{params:{page:this.page,size:this.size}}));this.items.set(data.items);this.total.set(data.total);}
+ private async refreshList(){const params:Record<string,string|number>={page:this.page,size:this.size};if(this.query.trim())params['q']=this.query.trim();if(this.statusFilter)params['status']=this.statusFilter;const data=await firstValueFrom(this.http.get<Page<Product>>('/api/v1/admin/products',{params}));this.items.set(data.items);this.total.set(data.total);}
+ async filter(){this.page=0;this.router?.navigate([],{relativeTo:this.route??undefined,queryParams:{q:this.query||null,status:this.statusFilter||null},queryParamsHandling:'merge'});await this.run(()=>this.refreshList());}
  async load(){await this.run(async()=>{const [categories,collections,attributes]=await Promise.all([
   firstValueFrom(this.http.get<Category[]>('/api/v1/admin/categories')),firstValueFrom(this.http.get<Collection[]>('/api/v1/admin/collections')),firstValueFrom(this.http.get<AttributeDefinition[]>('/api/v1/admin/attributes'))]);
   this.categories.set(categories);this.collections.set(collections);this.attributes.set(attributes);await this.refreshList();});}
  name(p:Product){return (p.draft??p.published)?.name??p.slug;}
  state(p:Product){return p.archived?'Archivado':p.draft?(p.published?'Cambios sin publicar':'Borrador'):'Publicado';}
- newProduct(form:NgForm){if(form.dirty&&!confirm('¿Descartar los cambios sin guardar?'))return;this.selected.set(null);this.slug='';this.draft=this.blank();this.confirmedArchive.set(false);form.form.markAsPristine();form.form.markAsUntouched();this.error.set('');this.notice.set('');}
+ newProduct(form:NgForm){if(form.dirty&&!confirm('¿Descartar los cambios sin guardar?'))return;this.selected.set(null);this.slug='';this.draft=this.blank();this.editorTab.set('content');this.confirmedArchive.set(false);form.form.markAsPristine();form.form.markAsUntouched();this.error.set('');this.notice.set('');}
  async open(p:Product,form:NgForm){if(form.dirty&&!confirm('¿Descartar los cambios sin guardar?'))return;await this.run(async()=>{const data=await firstValueFrom(this.http.get<Product>('/api/v1/admin/products/'+p.id));this.setProduct(data);await this.loadMedia(data.id);form.form.markAsPristine();});}
  private setProduct(p:Product){this.selected.set(p);this.slug=p.slug;this.draft=structuredClone(p.draft??p.published??this.blank());this.draft.collectionIds??=[];this.confirmedArchive.set(false);}
  addVariant(form:NgForm){if(this.draft.variants.length>=50)return;this.draft.variants.push({sku:'',attributes:{talla:'',color:''},price:0.01,enabled:true});form.form.markAsDirty();}

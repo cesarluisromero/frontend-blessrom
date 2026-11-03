@@ -3,15 +3,18 @@ import {DatePipe} from '@angular/common';
 import {FormsModule,NgForm} from '@angular/forms';
 import {HttpClient} from '@angular/common/http';
 import {firstValueFrom} from 'rxjs';
+import {ActivatedRoute,Router,RouterLink} from '@angular/router';
 import {Order,Page,ReturnCase,ShippingRate,errorMessage,money} from '../../../../shared/commerce';
-interface OrderSummary {id:string;version:number;status:string;currency:string;total:string;created_at:string;reservation_expires_at:string}
-@Component({selector:'app-orders',imports:[FormsModule,DatePipe],templateUrl:'./orders.html',styleUrl:'./products.scss'})
+interface OrderSummary {id:string;orderNumber?:string;version:number;status:string;currency:string;total:string;created_at:string;reservation_expires_at:string;payment_status?:string}
+interface ReturnSummary {id:string;order_id:string;orderNumber?:string;status:string;reason:string;created_at:string}
+@Component({selector:'app-orders',imports:[FormsModule,DatePipe,RouterLink],templateUrl:'./orders.html',styleUrl:'./products.scss'})
 export class Orders {
- private http=inject(HttpClient);orders=signal<OrderSummary[]>([]);rates=signal<ShippingRate[]>([]);selected=signal<Order|null>(null);busy=signal(false);error=signal('');notice=signal('');total=signal(0);page=0;
+ private http=inject(HttpClient);private route=inject(ActivatedRoute,{optional:true});private router=inject(Router,{optional:true});orders=signal<OrderSummary[]>([]);returns=signal<ReturnSummary[]>([]);returnTotal=signal(0);rates=signal<ShippingRate[]>([]);selected=signal<Order|null>(null);busy=signal(false);error=signal('');notice=signal('');total=signal(0);page=0;
+ tab:'orders'|'returns'|'rates'='orders';q='';filterStatus='';paymentStatusFilter='';paymentMethodFilter='';from='';to='';returnStatusFilter='';paymentException=false;
  departmentName='';provinceName='';districtCode='';districtName='';amount:number|null=null;active=true;editing:ShippingRate|null=null;readonly money=money;
  shipmentCarrier='';trackingNumber='';estimatedDelivery='';shipmentNotes='';shipmentVersion=0;
  returnNote='';returnReference='';returnRestock=false;
- constructor(){void this.load();}
+ constructor(){const p=this.route?.snapshot.queryParamMap;if(p){this.tab=p.get('tab')==='returns'?'returns':p.get('tab')==='rates'?'rates':'orders';this.q=p.get('q')??'';this.filterStatus=p.get('status')??'';this.paymentStatusFilter=p.get('paymentStatus')??'';this.paymentMethodFilter=p.get('paymentMethod')??'';this.from=p.get('from')??'';this.to=p.get('to')??'';this.returnStatusFilter=p.get('returnStatus')??'';this.paymentException=p.get('paymentException')==='true';}void this.load();const id=this.route?.snapshot.paramMap.get('id');if(id)void this.open(id);}
  status(s:string){return ({PENDING_PAYMENT:'Pendiente de pago',PAYMENT_CONFIRMED:'Pago confirmado',PREPARING:'En preparación',READY_TO_SHIP:'Listo para enviar',SHIPPED:'Enviado',DELIVERED:'Entregado',CANCELLED:'Cancelado',EXPIRED:'Reserva vencida'} as Record<string,string>)[s]??s;}
  next(s:string){return ({PAYMENT_CONFIRMED:{status:'PREPARING',label:'Iniciar preparación'},PREPARING:{status:'READY_TO_SHIP',label:'Marcar como listo para enviar'},READY_TO_SHIP:{status:'SHIPPED',label:'Marcar como enviado'},SHIPPED:{status:'DELIVERED',label:'Marcar como entregado'}} as Record<string,{status:string;label:string}>)[s];}
  paymentStatus(s:string){return ({PENDING_PROVIDER:'Esperando pago',SUBMITTED:'Pendiente de revisión',APPROVED:'Aprobado',REJECTED:'Rechazado'} as Record<string,string>)[s]??s;}
@@ -21,10 +24,13 @@ export class Orders {
  resolution(s:string){return s==='REFUND'?'Reembolso':'Cambio';}
  isAutomaticRefund(order:Order,request:ReturnCase){return request.requested_resolution==='REFUND'&&order.payment?.method==='MERCADO_PAGO';}
  private async run(fn:()=>Promise<void>){if(this.busy())return;this.busy.set(true);this.error.set('');this.notice.set('');try{await fn();}catch(e){this.error.set(errorMessage(e));}finally{this.busy.set(false);}}
- async load(){await this.run(async()=>{await Promise.all([this.loadOrders(),this.loadRates()]);});}
- private async loadOrders(){const p=await firstValueFrom(this.http.get<Page<OrderSummary>>('/api/v1/admin/orders',{params:{page:this.page,size:20}}));this.orders.set(p.items);this.total.set(p.total);}
+ async load(){await this.run(async()=>{await Promise.all([this.loadOrders(),this.loadRates(),this.tab==='returns'?this.loadReturns():Promise.resolve()]);});}
+ private async loadOrders(){const params:Record<string,string|number|boolean>={page:this.page,size:20};if(this.q)params['q']=this.q;if(this.filterStatus)params['status']=this.filterStatus;if(this.paymentStatusFilter)params['paymentStatus']=this.paymentStatusFilter;if(this.paymentMethodFilter)params['paymentMethod']=this.paymentMethodFilter;if(this.from)params['from']=this.from;if(this.to)params['to']=this.to;if(this.paymentException)params['paymentException']=true;const p=await firstValueFrom(this.http.get<Page<OrderSummary>>('/api/v1/admin/orders',{params}));this.orders.set(p.items);this.total.set(p.total);}
+ private async loadReturns(){const params:Record<string,string|number>={page:this.page,size:20};if(this.returnStatusFilter)params['status']=this.returnStatusFilter;const p=await firstValueFrom(this.http.get<Page<ReturnSummary>>('/api/v1/admin/returns',{params}));this.returns.set(p.items);this.returnTotal.set(p.total);}
+ async applyFilters(){this.page=0;this.router?.navigate([],{relativeTo:this.route??undefined,queryParams:{tab:this.tab==='orders'?null:this.tab,q:this.q||null,status:this.filterStatus||null,paymentStatus:this.paymentStatusFilter||null,paymentMethod:this.paymentMethodFilter||null,from:this.from||null,to:this.to||null,returnStatus:this.returnStatusFilter||null,paymentException:this.paymentException||null},queryParamsHandling:'merge'});await this.run(async()=>{if(this.tab==='returns')await this.loadReturns();else await this.loadOrders();});}
+ async selectTab(tab:'orders'|'returns'|'rates'){this.tab=tab;await this.applyFilters();}
  private async loadRates(){this.rates.set(await firstValueFrom(this.http.get<ShippingRate[]>('/api/v1/admin/shipping-rates')));}
- async pageTo(page:number){if(page<0)return;this.page=page;await this.run(()=>this.loadOrders());}
+ async pageTo(page:number){if(page<0)return;this.page=page;await this.run(()=>this.tab==='returns'?this.loadReturns():this.loadOrders());}
  async open(id:string){await this.run(async()=>{const order=await firstValueFrom(this.http.get<Order>('/api/v1/admin/orders/'+id));this.selected.set(order);this.loadShipment(order);});}
  private loadShipment(order:Order){const shipment=order.shipment;this.shipmentVersion=shipment?.version??0;this.shipmentCarrier=shipment?.carrier??'';this.trackingNumber=shipment?.tracking_number??'';this.estimatedDelivery=shipment?.estimated_delivery??'';this.shipmentNotes=shipment?.notes??'';}
  async saveShipment(form:NgForm){const order=this.selected();if(!order||form.invalid)return;await this.run(async()=>{const updated=await firstValueFrom(this.http.put<Order>('/api/v1/admin/orders/'+order.id+'/shipment',{version:this.shipmentVersion,carrier:this.shipmentCarrier,trackingNumber:this.trackingNumber,estimatedDelivery:this.estimatedDelivery,notes:this.shipmentNotes||null}));this.selected.set(updated);this.loadShipment(updated);this.notice.set('Datos de envío guardados.');});}

@@ -1,6 +1,10 @@
+<a class="skip-link" href="#admin-content">Ir al contenido</a>
 <div class="layout">
-<aside><a routerLink="/" class="brand"><img src="/blessrom-logo.webp" alt="Blessrom C &amp; M" width="220" height="74"></a><p class="label">ADMINISTRACIÓN</p>
-@if(auth.admin()){<nav aria-label="Administración"><a routerLink="/">Vista general</a><a routerLink="/productos">Productos y categorías</a><a routerLink="/inventario">Inventario</a><a routerLink="/promociones">Promociones</a><a routerLink="/pedidos">Pedidos y envíos</a></nav>}
-<small>Perú · PEN</small></aside>
-<div><header><span>{{auth.username() || 'Acceso del equipo'}}</span>@if(auth.authenticated()){<button (click)="auth.logout()">Cerrar sesión</button>}</header>
-@if(auth.error()){<p role="alert">{{auth.error()}}</p>}<router-outlet /></div></div>
+ <aside [class.open]="menuOpen()" id="admin-navigation"><a routerLink="/" class="brand" aria-label="Blessrom, vista general"><img src="/blessrom-logo.webp" alt="Blessrom C & M" width="220" height="74"></a><p class="label">ADMINISTRACIÓN</p>
+ @if(auth.admin()){<nav aria-label="Administración" (click)="menuOpen.set(false)"><a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{exact:true}"><span aria-hidden="true">⌂</span> Vista general</a><a routerLink="/productos" routerLinkActive="active" [routerLinkActiveOptions]="{exact:true}"><span aria-hidden="true">▦</span> Productos</a><a routerLink="/productos/portada" routerLinkActive="active"><span aria-hidden="true">▧</span> Portada</a><a routerLink="/inventario" routerLinkActive="active"><span aria-hidden="true">▤</span> Inventario</a><a routerLink="/pedidos" routerLinkActive="active"><span aria-hidden="true">▱</span> Pedidos y envíos</a><a routerLink="/promociones" routerLinkActive="active"><span aria-hidden="true">◇</span> Promociones</a></nav>}
+ <div class="aside-footer"><a href="https://blessrom.com" target="_blank" rel="noopener">Ver tienda ↗</a><small>Perú · PEN</small></div></aside>
+ <div class="workspace"><header><div class="header-start"><button class="menu-button secondary" type="button" (click)="menuOpen.set(!menuOpen())" [attr.aria-expanded]="menuOpen()" aria-controls="admin-navigation">☰ <span>Menú</span></button><span class="breadcrumb">Blessrom <span aria-hidden="true">/</span> Administración</span></div>
+ @if(auth.admin()){<form class="quick-search" (ngSubmit)="search()"><label class="sr-only" for="admin-search">Buscar producto o SKU</label><input id="admin-search" name="query" [(ngModel)]="query" maxlength="100" placeholder="Buscar producto o SKU"><button type="submit" aria-label="Buscar productos">⌕</button></form>}
+ <div class="profile"><span>{{auth.username() || 'Acceso del equipo'}}</span>@if(auth.authenticated()){<button class="secondary" type="button" (click)="auth.logout()">Salir</button>}</div></header>
+ <div id="admin-content" tabindex="-1">@if(auth.error()){<p class="global-alert" role="alert">{{auth.error()}}</p>}<router-outlet /></div></div>
+</div>

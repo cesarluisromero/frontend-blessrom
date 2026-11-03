@@ -3,16 +3,23 @@ import {FormsModule} from '@angular/forms';
 import {DatePipe} from '@angular/common';
 import {HttpClient} from '@angular/common/http';
 import {firstValueFrom} from 'rxjs';
-import {Product,Variant,Page,errorMessage} from '../../../../shared/commerce';
+import {ActivatedRoute,Router} from '@angular/router';
+import {Product,Variant,Page,InventoryRow,errorMessage} from '../../../../shared/commerce';
 export interface Stock {variant_id:string;on_hand:number;reserved:number;available:number;version:number}
 interface Movement {id:string;created_at:string;on_hand_delta:number;reserved_delta:number;reason:string;actor:string}
 @Component({selector:'app-inventory',imports:[FormsModule,DatePipe],templateUrl:'./inventory.html',styleUrl:'./products.scss'})
 export class Inventory {
  private http=inject(HttpClient);
+ private route=inject(ActivatedRoute,{optional:true});private router=inject(Router,{optional:true});private initialVariant:string|null=null;
  products=signal<Product[]>([]);variants=signal<Variant[]>([]);stock=signal<Stock|null>(null);movements=signal<Movement[]>([]);
+ rows=signal<InventoryRow[]>([]);rowTotal=signal(0);rowPage=0;rowQuery='';rowLevel='all';
  busy=signal(false);error=signal('');notice=signal('');stale=signal(false);total=signal(0);
  productId='';variantId='';page=0;movementPage=0;direction='in';quantity:number|null=null;reason='';confirmed=false;
- constructor(){void this.load(0);}
+ constructor(){const p=this.route?.snapshot.queryParamMap;this.rowLevel=p?.get('stockLevel')??'all';this.rowQuery=p?.get('q')??'';this.initialVariant=p?.get('variant')??null;void this.load(0);void this.loadRows();}
+ async loadRows(){const params:Record<string,string|number>={page:this.rowPage,size:20,stockLevel:this.rowLevel};if(this.rowQuery.trim())params['q']=this.rowQuery.trim();try{const data=await firstValueFrom(this.http.get<Page<InventoryRow>>('/api/v1/admin/inventory',{params}));this.rows.set(data.items);this.rowTotal.set(data.total);const target=this.initialVariant&&data.items.find(row=>row.variant_id===this.initialVariant);if(target){this.initialVariant=null;void this.chooseRow(target);}}catch(e){this.error.set(errorMessage(e));}}
+ async filterRows(){this.rowPage=0;this.router?.navigate([],{relativeTo:this.route??undefined,queryParams:{stockLevel:this.rowLevel==='all'?null:this.rowLevel,q:this.rowQuery||null,variant:null},queryParamsHandling:'merge'});await this.loadRows();}
+ async rowPageTo(page:number){if(page<0)return;this.rowPage=page;await this.loadRows();}
+ async chooseRow(row:InventoryRow){this.productId=row.product_id;this.variantId=row.variant_id;this.stock.set(null);this.movements.set([]);this.reset();await this.reload();}
  name(p:Product){return (p.draft??p.published)?.name??p.slug;}
  label(v:Variant){return v.sku+' · '+Object.entries(v.attributes).map(([k,val])=>k+': '+val).join(' · ');}
  delta(){return (this.direction==='in'?1:-1)*(this.quantity??0);}
@@ -27,5 +34,5 @@ export class Inventory {
  async historyPage(page:number){if(page>=0)await this.run(()=>this.history(page));}
  async adjust(){if(!this.valid()||!this.confirmed||this.busy())return;const s=this.stock()!;await this.run(async()=>{this.notice.set('');try{this.stock.set(await firstValueFrom(this.http.post<Stock>('/api/v1/admin/inventory/'+this.variantId+'/adjustments',{version:s.version,delta:this.delta(),reason:this.reason.trim()})));}
  catch(e){this.stale.set(true);this.confirmed=false;throw e;}
- this.reset();this.notice.set('Ajuste registrado. Las existencias ya están actualizadas.');this.movements.set([]);await this.history(0);});}
+ this.reset();this.notice.set('Ajuste registrado. Las existencias ya están actualizadas.');this.movements.set([]);await this.history(0);await this.loadRows();});}
 }
