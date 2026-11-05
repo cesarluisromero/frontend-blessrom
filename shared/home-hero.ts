@@ -1,10 +1,10 @@
 import { Component, Input, OnDestroy, OnInit } from '@angular/core';
 import { DecimalPipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
-import { Category, Collection, HomeContent, HomeLink, ProductMedia, safeImage } from './commerce';
+import { Category, Collection, HomeContent, HomeLink, HomeSlideContent, ProductMedia, safeImage } from './commerce';
 
 export const DEFAULT_HOME:HomeContent={eyebrow:'Esencia natural. Actitud urbana.',title:'Tu estilo. Tu naturaleza.',description:'Prendas para acompañarte a tu ritmo. Descubre una nueva mirada al estilo cotidiano.',heroAssetId:null,heroAlt:'',frameX:50,frameY:40,primary:{label:'Explorar catálogo',target:{type:'catalog'}},secondary:{label:'Ver colecciones',target:{type:'collections'}},shortcuts:[]};
-export interface HomeSlide { content:HomeContent; media:ProductMedia|null; label?:string; }
+export interface HomeSlide { content:HomeContent|HomeSlideContent; media:ProductMedia|null; label?:string; }
 
 @Component({selector:'app-home-hero',imports:[RouterLink,DecimalPipe],template:`
 @if(current();as slide){<section class="home-slider" [class.preview]="preview" (mouseenter)="pauseOnHover=true" (mouseleave)="pauseOnHover=false" (focusin)="pauseOnHover=true" (focusout)="pauseOnHover=false" (touchstart)="startSwipe($event)" (touchend)="endSwipe($event)" aria-roledescription="carrusel" aria-label="Promociones de Blessrom">

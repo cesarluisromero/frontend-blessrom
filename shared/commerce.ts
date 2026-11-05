@@ -3,9 +3,11 @@ export interface Collection { id:string; name:string; slug:string; description:s
 export interface StorefrontCollection extends Collection { products:Product[]; }
 export interface HomeTarget { type:'catalog'|'category'|'collection'|'collections'; id?:string; }
 export interface HomeLink { label:string; target:HomeTarget; }
-export interface HomeContent { eyebrow:string; title:string; description:string; heroAssetId:string|null; heroAlt:string; frameX:number; frameY:number; primary:HomeLink; secondary:HomeLink|null; shortcuts:HomeLink[]; }
-export interface StorefrontHome { revisionId:string; content:HomeContent; heroMedia?:ProductMedia|null; }
-export interface HomeAdmin { version:number; draft:HomeContent|null; published:HomeContent|null; publishedAt?:string|null; publishedRevisionId?:string|null; draftMedia?:ProductMedia|null; publishedMedia?:ProductMedia|null; }
+export interface HomeSlideContent { eyebrow:string; title:string; description:string; heroAssetId:string|null; heroAlt:string; frameX:number; frameY:number; primary:HomeLink; secondary:HomeLink|null; enabled:boolean; }
+export interface HomeContent extends Omit<HomeSlideContent,'enabled'> { shortcuts:HomeLink[]; slides?:HomeSlideContent[]; }
+export interface HomeSlidePayload { content:HomeSlideContent; heroMedia?:ProductMedia|null; }
+export interface StorefrontHome { revisionId:string; content:HomeContent; heroMedia?:ProductMedia|null; slides?:HomeSlidePayload[]; }
+export interface HomeAdmin { version:number; draft:HomeContent|null; published:HomeContent|null; publishedAt?:string|null; publishedRevisionId?:string|null; draftMedia?:ProductMedia|null; publishedMedia?:ProductMedia|null; draftSlides?:HomeSlidePayload[]; publishedSlides?:HomeSlidePayload[]; }
 export interface Storefront { featuredCollections:StorefrontCollection[]; home?:StorefrontHome|null; paymentMethods?:string[]; }
 export interface MerchandisingLanding<T extends Category|Collection> { entity:T; products:Page<Product>; }
 export interface AttributeOption { id:string; attribute_id:string; value:string; label:string; swatch:string|null; display_order:number; active:boolean; }
