@@ -2,14 +2,14 @@ import { Component, inject, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { RouterLink } from '@angular/router';
 import { Page, Product, ProductMedia, StorefrontCollection, safeImage } from '../../../../shared/commerce';
-import { DEFAULT_HOME, HomeHero } from '../../../../shared/home-hero';
+import { DEFAULT_HOME, HomeHero, HomeSlide } from '../../../../shared/home-hero';
 import { SeoService } from './seo.service';
 import { StorefrontService } from './storefront.service';
 import { ProductCard } from './product-card';
 
 @Component({ selector: 'app-home', imports: [RouterLink, HomeHero, ProductCard], template: `
 <main>
-  <app-home-hero [content]="storefront.data()?.home?.content ?? defaults" [media]="storefront.data()?.home?.heroMedia ?? catalogHero()" [categories]="storefront.categories()" [collections]="storefront.collections()" />
+  <app-home-hero [slides]="heroSlides()" [categories]="storefront.categories()" [collections]="storefront.collections()" />
   <div class="benefits" aria-label="Comprar en Blessrom"><span><b aria-hidden="true">S/</b> Precios en soles</span><span><b aria-hidden="true">↗</b> Consulta cobertura de envío</span><span><b aria-hidden="true">♙</b> Compra como invitado</span></div>
   <section class="favorites"><div class="section-heading"><h2>Encuentra tu próximo favorito</h2><a routerLink="/catalogo">Ver todo el catálogo ↗</a></div>
     @if(loading()){<p role="status">Preparando el catálogo…</p>}
@@ -38,5 +38,10 @@ export class Home {
   loadProducts() { this.loading.set(true); this.error.set(false); this.http.get<Page<Product>>('/api/v1/products', { params: { page: 0, size: 3, sort: 'newest', available: true } }).subscribe({ next: value => { this.products.set(value.items); this.loading.set(false); }, error: () => { this.error.set(true); this.loading.set(false); } }); }
   featured() { return this.storefront.data()?.featuredCollections.filter(collection => collection.products.length > 0) ?? []; }
   catalogHero():ProductMedia|null {return this.products().find(product=>product.content?.media?.length)?.content?.media?.[0]??null;}
+  heroSlides():HomeSlide[]{
+    const home=this.storefront.data()?.home;const base=home?.content??this.defaults;const first:HomeSlide={content:base,media:home?.heroMedia??this.catalogHero(),label:'Tu estilo'};
+    const collectionSlides=this.featured().slice(0,2).map(collection=>{const media=collection.products.find(product=>product.content?.media?.length)?.content?.media?.[0]??null;const content={...this.defaults,eyebrow:'COLECCIÓN DESTACADA',title:collection.name,description:collection.description||'Descubre prendas para tu día a día.',heroAlt:collection.name,primary:{label:'Explorar colección',target:{type:'collection' as const,id:collection.id}},secondary:{label:'Ver catálogo',target:{type:'catalog' as const}},shortcuts:[]};return {content,media,label:collection.name};});
+    return [first,...collectionSlides];
+  }
   cover(collection: StorefrontCollection) { const product = collection.products.find(item => item.content?.imageUrl || item.content?.media?.length); return safeImage(collection.cover_image_url ?? product?.content?.media?.[0]?.urls.medium ?? product?.content?.imageUrl); }
 }
