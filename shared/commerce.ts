@@ -14,7 +14,8 @@ export interface AttributeOption { id:string; attribute_id:string; value:string;
 export interface AttributeDefinition { id:string; code:string; name:string; type:'TEXT'|'SIZE'|'COLOR'; filterable:boolean; display_order:number; active:boolean; options:AttributeOption[]; }
 export interface Variant { id?:string; sku:string; attributes:Record<string,string>; price:string|number; enabled:boolean; available?:number; }
 export type MediaVariant='original'|'large'|'medium'|'thumbnail';
-export interface ProductMedia { id:string; alt_text:string|null; is_primary:boolean; display_order?:number; urls:Record<MediaVariant,string>; }
+export interface MediaObject { variant:MediaVariant; width:number; height:number; byte_size?:number; }
+export interface ProductMedia { id:string; alt_text:string|null; is_primary:boolean; display_order?:number; urls:Record<MediaVariant,string>; objects?:MediaObject[]; }
 export interface Content { name:string; description:string; categoryId:string; imageUrl:string|null; media?:ProductMedia[]; variants:Variant[]; collectionIds?:string[]; }
 export interface Product { id:string; slug:string; version:number; archived:boolean; draft?:Content|null; published?:Content|null; content?:Content; }
 export interface FacetOption {value:string;label:string;count:number}
