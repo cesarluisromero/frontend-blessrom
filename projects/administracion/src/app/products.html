@@ -35,10 +35,24 @@
 <label>Descripción<textarea name="description" [(ngModel)]="draft.description" maxlength="5000" rows="4"></textarea></label>
 </div><div [hidden]="editorTab()!=='images'" class="media"><h3>Imágenes</h3>
 @if(selected()){
+<div class="image-mode" role="tablist" aria-label="Modo de carga"><button type="button" [class.active]="imageMode()==='manual'" (click)="imageMode.set('manual')">Carga manual</button><button type="button" [class.active]="imageMode()==='ai'" (click)="imageMode.set('ai')">Estudio IA</button></div>
+@if(imageMode()==='manual'){
 <label class="upload">Seleccionar fotografía<input type="file" accept="image/jpeg,image/png,image/webp,image/avif,.heic,.heif,.tif,.tiff" (change)="selectImage($event,editor)" [disabled]="busy()"></label>
 <small>Se corrige la orientación y se generan automáticamente cuatro archivos WebP. Máximo 20 MB.</small>
 @if(uploadProgress()){<p class="progress" role="status">{{uploadProgress()}}</p>}
 @if(media().length){<div class="gallery">@for(image of media();track image.id;let i=$index){<article class="media-card" [class.selected]="image.is_primary"><div class="media-preview"><img [src]="image.urls.thumbnail" [alt]="image.alt_text??draft.name">@if(image.is_primary){<strong>Principal</strong>}</div><label>Texto alternativo<input #altInput [value]="image.alt_text??''" maxlength="300" placeholder="Describe la prenda"></label><div class="media-actions"><button type="button" class="secondary" (click)="saveAlt(image,altInput.value)">Guardar texto</button><button type="button" (click)="setPrimary(image)" [disabled]="image.is_primary">Hacer principal</button><button type="button" class="secondary" (click)="moveMedia(i,-1)" [disabled]="i===0" aria-label="Mover imagen hacia arriba">↑</button><button type="button" class="secondary" (click)="moveMedia(i,1)" [disabled]="i===media().length-1" aria-label="Mover imagen hacia abajo">↓</button><button type="button" class="danger" (click)="deleteMedia(image)">Eliminar</button></div></article>}</div>}
+} @else {
+<section class="ai-studio" aria-labelledby="ai-product-title"><div class="ai-heading"><div><p class="eyebrow">Opcional</p><h3 id="ai-product-title">Estudio IA de producto</h3></div><span class="ai-state" [class.ready]="aiStatus()?.configured">{{aiStatus()?.configured?'Disponible':aiStatus()?.enabled?'Worker sin configurar':'Deshabilitado'}}</span></div>
+<p>Elimina el fondo, conserva la transparencia y normaliza la prenda a 1600 × 2000. El resultado no aparecerá en la tienda hasta publicar el producto.</p>
+@if(aiStatus()?.enabled){<label class="upload ai-upload">Seleccionar foto para recortar<input type="file" accept="image/jpeg,image/png,image/webp,image/avif" (change)="selectAiImage($event)"></label>}@else{<p class="media-help">Activa <code>AI_STUDIO_ENABLED</code> después de desplegar el worker. La carga manual continúa disponible.</p>}
+@if(aiProgress()){<p class="progress" role="status">{{aiProgress()}}</p>}
+@if(aiJob();as job){<div class="ai-job"><div class="job-line"><b>Trabajo {{job.status}}</b><span>Correcciones {{job.attempts}} / 3</span></div>@if(job.error_message){<p class="message error">{{job.error_message}}</p>}
+ @for(result of job.results;track result.id){<article class="cutout-review"><div class="compare">@if(aiOriginalPreview){<figure><img [src]="aiOriginalPreview" alt="Fotografía original"><figcaption>Original</figcaption></figure>}@if(result.media?.urls?.medium;as src){<figure class="transparent"><img [src]="src" [alt]="draft.name"><figcaption>Recorte transparente 4:5</figcaption></figure>}</div>
+ <div class="review-state"><span [class.approved]="result.image_approved">{{result.image_approved?'Recorte aprobado':'Pendiente de aprobación'}}</span></div>
+ @if(!result.image_approved){<label>¿Qué debe mejorar?<textarea [ngModel]="aiFeedback()" (ngModelChange)="aiFeedback.set($event)" [ngModelOptions]="{standalone:true}" rows="3" maxlength="1000" placeholder="Ej.: conservar mejor el borde de la manga izquierda"></textarea></label><div class="approval-actions"><button type="button" (click)="reviewAi(result,true)">Aprobar recorte</button><button type="button" class="reject" (click)="reviewAi(result,false)" [disabled]="result.revision>=3">Rechazar y corregir</button></div>}@else{<button type="button" (click)="applyAi(result)" [disabled]="result.status==='APPLIED'">{{result.status==='APPLIED'?'Añadido al borrador':'Añadir al borrador'}}</button>}
+ </article>}
+</div>}</section>
+}
 } @else {<p class="media-help">Primero guarda el producto; después podrás subir sus fotografías.</p>}
 <details><summary>Usar una URL externa temporalmente</summary><label>Imagen (URL HTTPS)<input name="image" [(ngModel)]="draft.imageUrl" type="url" pattern="https://[^\s]+" maxlength="2000" placeholder="https://..."></label></details>
 </div><div [hidden]="editorTab()!=='variants'"><h3>Variantes y precios</h3>

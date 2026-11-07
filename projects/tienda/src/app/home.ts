@@ -38,7 +38,7 @@ export class Home {
   featured() { return this.storefront.data()?.featuredCollections.filter(collection => collection.products.length > 0) ?? []; }
   heroSlides():HomeSlide[]{
     const home=this.storefront.data()?.home;
-    if(home?.slides?.length)return home.slides.filter(item=>item.content.enabled!==false&&!!item.heroMedia).map(item=>({content:item.content,media:item.heroMedia??null,label:item.content.eyebrow||item.content.title}));
+    if(home?.slides?.length)return home.slides.filter(item=>item.content.enabled!==false&&!!item.heroMedia).map(item=>({content:item.content,media:item.heroMedia??null,mobileMedia:item.mobileMedia??null,label:item.content.eyebrow||item.content.title}));
     return home?.heroMedia?[{content:home.content,media:home.heroMedia,label:home.content.eyebrow||home.content.title}]:[];
   }
   cover(collection: StorefrontCollection) { const product = collection.products.find(item => item.content?.imageUrl || item.content?.media?.length); return safeImage(collection.cover_image_url ?? product?.content?.media?.[0]?.urls.medium ?? product?.content?.imageUrl); }

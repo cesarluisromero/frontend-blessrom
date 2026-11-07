@@ -3,9 +3,9 @@ export interface Collection { id:string; name:string; slug:string; description:s
 export interface StorefrontCollection extends Collection { products:Product[]; }
 export interface HomeTarget { type:'catalog'|'category'|'collection'|'collections'; id?:string; }
 export interface HomeLink { label:string; target:HomeTarget; }
-export interface HomeSlideContent { eyebrow:string; title:string; description:string; heroAssetId:string|null; heroAlt:string; frameX:number; frameY:number; primary:HomeLink; secondary:HomeLink|null; enabled:boolean; }
+export interface HomeSlideContent { eyebrow:string; title:string; description:string; heroAssetId:string|null; mobileAssetId?:string|null; heroAlt:string; frameX:number; frameY:number; primary:HomeLink; secondary:HomeLink|null; enabled:boolean; }
 export interface HomeContent extends Omit<HomeSlideContent,'enabled'> { shortcuts:HomeLink[]; slides?:HomeSlideContent[]; }
-export interface HomeSlidePayload { content:HomeSlideContent; heroMedia?:ProductMedia|null; }
+export interface HomeSlidePayload { content:HomeSlideContent; heroMedia?:ProductMedia|null; mobileMedia?:ProductMedia|null; }
 export interface StorefrontHome { revisionId:string; content:HomeContent; heroMedia?:ProductMedia|null; slides?:HomeSlidePayload[]; }
 export interface HomeAdmin { version:number; draft:HomeContent|null; published:HomeContent|null; publishedAt?:string|null; publishedRevisionId?:string|null; draftMedia?:ProductMedia|null; publishedMedia?:ProductMedia|null; draftSlides?:HomeSlidePayload[]; publishedSlides?:HomeSlidePayload[]; }
 export interface Storefront { featuredCollections:StorefrontCollection[]; home?:StorefrontHome|null; paymentMethods?:string[]; }
@@ -16,6 +16,9 @@ export interface Variant { id?:string; sku:string; attributes:Record<string,stri
 export type MediaVariant='original'|'large'|'medium'|'thumbnail';
 export interface MediaObject { variant:MediaVariant; width:number; height:number; byte_size?:number; }
 export interface ProductMedia { id:string; alt_text:string|null; is_primary:boolean; display_order?:number; urls:Record<MediaVariant,string>; objects?:MediaObject[]; }
+export interface AiStudioStatus {enabled:boolean;configured:boolean;manualUploadAvailable:boolean;maxCorrections:number;catalogCanvas:string;desktopCover:string;mobileCover:string}
+export interface AiStudioResult {id:string;slot:number;revision:number;status:string;image_approved:boolean;copy_approved:boolean;feedback?:string|null;content:Record<string,string>;media?:ProductMedia;desktopMedia?:ProductMedia;mobileMedia?:ProductMedia}
+export interface AiStudioJob {id:string;job_type:string;product_id?:string|null;page_key?:string|null;status:string;attempts:number;error_code?:string|null;error_message?:string|null;results:AiStudioResult[];created_at:string;updated_at:string}
 export interface Content { name:string; description:string; categoryId:string; imageUrl:string|null; media?:ProductMedia[]; variants:Variant[]; collectionIds?:string[]; }
 export interface Product { id:string; slug:string; version:number; archived:boolean; draft?:Content|null; published?:Content|null; content?:Content; }
 export interface FacetOption {value:string;label:string;count:number}
