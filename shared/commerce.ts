@@ -8,6 +8,14 @@ export interface HomeContent extends Omit<HomeSlideContent,'enabled'> { shortcut
 export interface HomeSlidePayload { content:HomeSlideContent; heroMedia?:ProductMedia|null; mobileMedia?:ProductMedia|null; }
 export interface StorefrontHome { revisionId:string; content:HomeContent; heroMedia?:ProductMedia|null; slides?:HomeSlidePayload[]; }
 export interface HomeAdmin { version:number; draft:HomeContent|null; published:HomeContent|null; publishedAt?:string|null; publishedRevisionId?:string|null; draftMedia?:ProductMedia|null; publishedMedia?:ProductMedia|null; draftSlides?:HomeSlidePayload[]; publishedSlides?:HomeSlidePayload[]; }
+export type HomeCoverRole = 'DESKTOP' | 'MOBILE';
+export interface HomeCoverPurge {
+  id: string;
+  status: 'QUEUED' | 'RUNNING' | 'SUCCEEDED' | 'FAILED';
+  attempts: number;
+  errorMessage?: string | null;
+}
+export interface HomeCoverRemoval { home: HomeAdmin; purge: HomeCoverPurge; }
 export interface Storefront { featuredCollections:StorefrontCollection[]; home?:StorefrontHome|null; paymentMethods?:string[]; }
 export interface MerchandisingLanding<T extends Category|Collection> { entity:T; products:Page<Product>; }
 export interface AttributeOption { id:string; attribute_id:string; value:string; label:string; swatch:string|null; display_order:number; active:boolean; }

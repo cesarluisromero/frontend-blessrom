@@ -1,49 +1,183 @@
-import { Component, Input, OnDestroy, OnInit } from '@angular/core';
 import { DecimalPipe } from '@angular/common';
+import { Component, Input, OnDestroy, OnInit, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { Category, Collection, HomeContent, HomeLink, HomeSlideContent, ProductMedia, safeImage } from './commerce';
+import { isFixedHomeCover } from './home-cover';
 
-export const DEFAULT_HOME:HomeContent={eyebrow:'Esencia natural. Actitud urbana.',title:'Tu estilo. Tu naturaleza.',description:'Prendas para acompañarte a tu ritmo. Descubre una nueva mirada al estilo cotidiano.',heroAssetId:null,heroAlt:'',frameX:50,frameY:40,primary:{label:'Explorar catálogo',target:{type:'catalog'}},secondary:{label:'Ver colecciones',target:{type:'collections'}},shortcuts:[]};
-export interface HomeSlide { content:HomeContent|HomeSlideContent; media:ProductMedia|null; mobileMedia?:ProductMedia|null; label?:string; }
+export const DEFAULT_HOME: HomeContent = {
+  eyebrow: 'Esencia natural. Actitud urbana.',
+  title: 'Tu estilo. Tu naturaleza.',
+  description: 'Prendas para acompañarte a tu ritmo. Descubre una nueva mirada al estilo cotidiano.',
+  heroAssetId: null,
+  heroAlt: '',
+  frameX: 50,
+  frameY: 40,
+  primary: { label: 'Explorar catálogo', target: { type: 'catalog' } },
+  secondary: { label: 'Ver colecciones', target: { type: 'collections' } },
+  shortcuts: [],
+};
 
-@Component({selector:'app-home-hero',imports:[RouterLink,DecimalPipe],template:`
-@if(current();as slide){<section class="home-slider" [class.preview]="preview" (mouseenter)="pauseOnHover=true" (mouseleave)="pauseOnHover=false" (focusin)="pauseOnHover=true" (focusout)="pauseOnHover=false" (touchstart)="startSwipe($event)" (touchend)="endSwipe($event)" aria-roledescription="carrusel" aria-label="Promociones de Blessrom">
- <div class="hero-image">@if(image(displayMedia(slide)?.urls?.large);as src){@if(requiresDesktopContain(displayMedia(slide))){<img class="photo backdrop" aria-hidden="true" alt="" [src]="src" [style.object-position]="slide.content.frameX+'% '+slide.content.frameY+'%'">}<picture>@if(!forceMobile&&slide.mobileMedia){<source media="(max-width:650px)" [srcset]="srcset(slide.mobileMedia)">}<img class="photo" [class.desktop-contain]="requiresDesktopContain(displayMedia(slide))" [src]="src" [attr.srcset]="srcset(displayMedia(slide))" sizes="100vw" [alt]="slide.content.heroAlt||displayMedia(slide)?.alt_text||slide.content.title" [style.object-position]="slide.content.frameX+'% '+slide.content.frameY+'%'" [attr.fetchpriority]="index()===0?'high':null" width="1600" height="720"></picture>}@else{<div class="landscape" role="img" aria-label="Paisaje abstracto inspirado en Tarapoto"><span class="sun"></span><span class="hill back"></span><span class="hill front"></span></div>}</div><div class="shade"></div>
- @if(slides.length>1&&!preview){<button type="button" class="nav-arrow previous" (click)="previous()" aria-label="Diapositiva anterior">‹</button><button type="button" class="nav-arrow next" (click)="next()" aria-label="Diapositiva siguiente">›</button>}
- <div class="hero-copy" aria-live="polite"><p class="hero-eyebrow">{{slide.content.eyebrow}}</p><h1>{{slide.content.title}}</h1><p class="hero-description">{{slide.content.description}}</p>
- <div class="hero-actions">@if(link(slide.content.primary);as primary){@if(preview){<span class="hero-primary">{{slide.content.primary.label}}</span>}@else{<a class="hero-primary" [routerLink]="primary.path" [fragment]="primary.fragment">{{slide.content.primary.label}} <span aria-hidden="true">↗</span></a>}}
- @if(slide.content.secondary;as secondary){@if(link(secondary);as target){@if(preview){<span class="hero-secondary">{{secondary.label}}</span>}@else{<a class="hero-secondary" [routerLink]="target.path" [fragment]="target.fragment">{{secondary.label}} →</a>}}}</div></div>
- <div class="slider-controls" aria-label="Controles del carrusel"><span>{{index()+1 | number:'2.0-0'}} / {{slides.length | number:'2.0-0'}}</span><div class="progress" role="tablist">@for(item of slides;track $index){<button type="button" [class.active]="$index===index()" (click)="go($index)" [attr.aria-label]="'Ir a '+($index+1)" [attr.aria-selected]="$index===index()"></button>}</div>@if(slides.length>1&&!preview){<button type="button" class="pause" (click)="togglePause()" [attr.aria-label]="paused?'Reanudar carrusel':'Pausar carrusel'">{{paused?'▶ Reanudar':'Ⅱ Pausar'}}</button>}</div>
-</section>}
-@if(slides.length>1&&!preview){<nav class="slide-tabs" aria-label="Secciones destacadas">@for(slide of slides;track $index){<button type="button" [class.active]="$index===index()" (click)="go($index)">{{slide.label||slide.content.eyebrow}}</button>}</nav>}
-`,styles:[`
-:host{display:block;container-type:inline-size}.home-slider{position:relative;min-height:clamp(430px,47vw,620px);overflow:hidden;background:#14243e;color:white;isolation:isolate}.hero-image,.hero-image img,.landscape{position:absolute;inset:0;width:100%;height:100%}.hero-image img{display:block;object-fit:cover;background:#e5ebef}.hero-image .backdrop{filter:blur(28px);transform:scale(1.06);opacity:.78}.landscape{background:#7f9eb4;overflow:hidden}.sun{position:absolute;left:64%;top:12%;width:115px;height:115px;background:#b9986d;border-radius:50%}.hill{position:absolute;border-radius:50%;width:160%;height:80%;transform:rotate(-25deg)}.back{background:#53768f;left:-10%;top:45%}.front{background:#264e6b;left:-30%;top:65%}.shade{position:absolute;inset:0;background:linear-gradient(90deg,rgba(7,24,47,.94) 0%,rgba(7,24,47,.76) 33%,rgba(7,24,47,.16) 63%,rgba(7,24,47,.03) 100%)}.hero-copy{position:relative;z-index:2;display:flex;min-height:inherit;box-sizing:border-box;flex-direction:column;justify-content:center;width:min(54%,720px);padding:clamp(38px,6vw,88px) clamp(56px,7vw,112px) 100px}.hero-eyebrow{text-transform:uppercase;font-size:12px;letter-spacing:2.8px;color:#d1a969;font-weight:700}.hero-copy h1{font-family:Georgia,serif;font-weight:400;font-size:clamp(40px,5.2vw,76px);line-height:1.04;max-width:660px;margin:20px 0 14px;text-wrap:balance}.hero-description{color:#fff;font-size:clamp(16px,1.35vw,20px);line-height:1.55;max-width:510px;white-space:pre-line;text-shadow:0 1px 3px #07182f}.hero-actions{display:flex;flex-wrap:wrap;gap:18px;align-items:center;margin:26px 0 0}.hero-primary{display:inline-flex;align-items:center;gap:24px;min-height:48px;padding:13px 22px;background:#fff;color:#14243e;border-radius:8px;text-decoration:none;font-weight:700}.hero-secondary{display:inline-flex;align-items:center;min-height:44px;color:#fff;text-decoration:underline;text-underline-offset:5px}.nav-arrow{position:absolute;z-index:4;top:50%;transform:translateY(-50%);display:grid;place-items:center;width:48px;height:48px;border:0;border-radius:50%;background:rgba(255,255,255,.94);color:#14243e;font-size:32px;box-shadow:0 5px 20px #07182f55}.nav-arrow.previous{left:18px}.nav-arrow.next{right:18px}.slider-controls{position:absolute;z-index:3;left:clamp(56px,7vw,112px);right:28px;bottom:25px;display:flex;align-items:center;gap:13px;font-size:13px}.progress{display:flex;gap:8px;align-items:center}.progress button{width:42px;height:4px;min-width:42px;min-height:4px;padding:0;border:0;border-radius:4px;background:#d7dde4}.progress button.active{background:#d1a969}.pause{min-height:38px;border:1px solid #fff;border-radius:20px;background:#07182f88;color:#fff;padding:0 14px;margin-left:auto}.slide-tabs{display:flex;background:#fff;border-bottom:1px solid #e1e5e9}.slide-tabs button{flex:1;min-height:52px;border:0;border-bottom:3px solid transparent;background:#fff;color:#14243e}.slide-tabs button.active{border-bottom-color:#a77b42;font-weight:700}.hero-primary:focus-visible,.hero-secondary:focus-visible,.nav-arrow:focus-visible,.slider-controls button:focus-visible,.slide-tabs button:focus-visible{outline:3px solid #d1a969;outline-offset:3px}@container(min-width:651px){.hero-image .desktop-contain{object-fit:contain;background:transparent}}@container(max-width:650px){.home-slider{min-height:520px}.hero-image img{object-position:center 28%!important}.hero-image .backdrop{display:none}.shade{background:linear-gradient(180deg,rgba(7,24,47,.04) 20%,rgba(7,24,47,.15) 42%,rgba(7,24,47,.94) 70%,rgba(7,24,47,.98) 100%)}.hero-copy{justify-content:flex-end;width:100%;padding:235px 24px 78px;text-align:center;align-items:center}.hero-copy h1{font-size:38px;margin:12px 0 8px}.hero-eyebrow{font-size:11px}.hero-description{font-size:15px;line-height:1.4;margin:0}.hero-actions{justify-content:center;margin-top:16px}.hero-secondary{display:none}.nav-arrow{width:44px;height:44px;top:37%}.nav-arrow.previous{left:10px}.nav-arrow.next{right:10px}.slider-controls{left:18px;right:18px;bottom:14px}.progress{flex:1;justify-content:center}.progress button{width:28px;min-width:28px}.pause{font-size:0;width:44px;padding:0}.pause::first-letter{font-size:14px}.slide-tabs{overflow-x:auto}.slide-tabs button{flex:0 0 40%;font-size:12px;white-space:nowrap}}
-.hero-image picture{position:absolute;inset:0;width:100%;height:100%}
-`]})
+export interface HomeSlide {
+  content: HomeContent | HomeSlideContent;
+  media: ProductMedia | null;
+  mobileMedia?: ProductMedia | null;
+  label?: string;
+}
+
+@Component({
+  selector: 'app-home-hero',
+  imports: [RouterLink, DecimalPipe],
+  styleUrl: './home-hero.scss',
+  template: `
+    @if (current(); as slide) {
+      <section class="home-slider" [class.preview]="preview" [class.mobile-preview]="preview && forceMobile"
+        (mouseenter)="pauseOnHover=true" (mouseleave)="pauseOnHover=false"
+        (focusin)="pauseOnHover=true" (focusout)="pauseOnHover=false"
+        (touchstart)="startSwipe($event)" (touchend)="endSwipe($event)"
+        aria-roledescription="carrusel" aria-label="Promociones de Blessrom">
+        <div class="hero-image">
+          @if (image(displayMedia(slide)?.urls?.large); as src) {
+            @if (legacyBackdrop(slide)) {
+              <img class="backdrop" aria-hidden="true" alt="" [src]="src" [style.object-position]="position(slide)">
+            }
+            <picture>
+              @if (!preview && slide.mobileMedia) {
+                <source media="(max-width:650px)" [srcset]="srcset(slide.mobileMedia)" sizes="100vw">
+              }
+              <img class="photo" [src]="src" [attr.srcset]="srcset(displayMedia(slide))" sizes="100vw"
+                [alt]="slide.content.heroAlt || displayMedia(slide)?.alt_text || slide.content.title"
+                [style.object-position]="position(slide)" [attr.fetchpriority]="index() === 0 ? 'high' : null">
+            </picture>
+          } @else {
+            <div class="landscape" role="img" aria-label="Paisaje abstracto inspirado en Tarapoto">
+              <span class="sun"></span><span class="hill back"></span><span class="hill front"></span>
+            </div>
+          }
+        </div>
+        <div class="shade"></div>
+        @if (slides.length > 1 && !preview) {
+          <button type="button" class="nav-arrow previous" (click)="previous()" aria-label="Diapositiva anterior">‹</button>
+          <button type="button" class="nav-arrow next" (click)="next()" aria-label="Diapositiva siguiente">›</button>
+        }
+        <div class="hero-copy" aria-live="polite">
+          <p class="hero-eyebrow">{{ slide.content.eyebrow }}</p>
+          <h1>{{ slide.content.title }}</h1>
+          <p class="hero-description">{{ slide.content.description }}</p>
+          <div class="hero-actions">
+            @if (link(slide.content.primary); as primary) {
+              @if (preview) { <span class="hero-primary">{{ slide.content.primary.label }}</span> }
+              @else {
+                <a class="hero-primary" [routerLink]="primary.path" [fragment]="primary.fragment">
+                  {{ slide.content.primary.label }} <span aria-hidden="true">↗</span>
+                </a>
+              }
+            }
+            @if (slide.content.secondary; as secondary) {
+              @if (link(secondary); as target) {
+                @if (preview) { <span class="hero-secondary">{{ secondary.label }}</span> }
+                @else { <a class="hero-secondary" [routerLink]="target.path" [fragment]="target.fragment">{{ secondary.label }} →</a> }
+              }
+            }
+          </div>
+        </div>
+        @if (slides.length > 1 && !preview) {
+          <div class="slider-controls" aria-label="Controles del carrusel">
+            <span>{{ index() + 1 | number:'2.0-0' }} / {{ slides.length | number:'2.0-0' }}</span>
+            <div class="progress" aria-label="Diapositivas">
+              @for (item of slides; track $index) {
+                <button type="button" [class.active]="$index === index()" (click)="go($index)"
+                  [attr.aria-label]="'Ir a ' + ($index + 1)" [attr.aria-current]="$index === index() ? 'true' : null"></button>
+              }
+            </div>
+            <button type="button" class="pause" (click)="togglePause()"
+              [attr.aria-label]="paused ? 'Reanudar carrusel' : 'Pausar carrusel'">{{ paused ? '▶ Reanudar' : 'Ⅱ Pausar' }}</button>
+          </div>
+        }
+      </section>
+    }
+    @if (slides.length > 1 && !preview) {
+      <nav class="slide-tabs" aria-label="Secciones destacadas">
+        @for (slide of slides; track $index) {
+          <button type="button" [class.active]="$index === index()" (click)="go($index)">
+            {{ slide.label || slide.content.eyebrow }}
+          </button>
+        }
+      </nav>
+    }
+  `,
+})
 export class HomeHero implements OnInit, OnDestroy {
- @Input() content:HomeContent=DEFAULT_HOME;
- @Input() media:ProductMedia|null|undefined=null;
- @Input() categories:Category[]=[];
- @Input() collections:Collection[]=[];
- @Input() preview=false;
- @Input() forceMobile=false;
- @Input() slides:HomeSlide[]=[];
- index=()=>this.activeIndex;
- activeIndex=0;paused=false;pauseOnHover=false;private timer?:ReturnType<typeof setInterval>;private touchX:number|null=null;
- ngOnInit(){if(!this.slides.length)this.slides=[{content:this.content,media:this.media??null}];const reduce=typeof window!=='undefined'&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;if(this.slides.length>1&&!reduce)this.timer=setInterval(()=>{if(!this.paused&&!this.pauseOnHover)this.next();},6000);}
- ngOnDestroy(){if(this.timer)clearInterval(this.timer);}
- current(){return this.slides[this.activeIndex]??{content:this.content,media:this.media};}
- go(index:number){this.activeIndex=Math.max(0,Math.min(index,this.slides.length-1));}
- next(){this.go((this.activeIndex+1)%this.slides.length);}
- previous(){this.go((this.activeIndex+this.slides.length-1)%this.slides.length);}
- togglePause(){this.paused=!this.paused;}
- startSwipe(event:TouchEvent){this.touchX=event.changedTouches[0]?.clientX??null;this.pauseOnHover=true;}
- endSwipe(event:TouchEvent){const end=event.changedTouches[0]?.clientX;if(this.touchX!==null&&end!==undefined&&Math.abs(end-this.touchX)>45)(end<this.touchX?this.next():this.previous());this.touchX=null;this.pauseOnHover=false;}
- readonly image=safeImage;
- requiresDesktopContain(media:ProductMedia|null|undefined){const object=media?.objects?.find(item=>item.variant==='large')??media?.objects?.find(item=>item.variant==='original');return !!object&&object.height>0&&object.width/object.height<2.15;}
- displayMedia(slide:HomeSlide){return this.forceMobile&&slide.mobileMedia?slide.mobileMedia:slide.media;}
- link(item:HomeLink):{path:string;fragment?:string}|null {
-  switch(item?.target?.type){case 'catalog':return {path:'/catalogo'};case 'collections':return {path:'/',fragment:'colecciones'};case 'category':{const c=this.categories.find(c=>c.id===item.target.id);return c?{path:'/categoria/'+c.slug}:null;}case 'collection':{const c=this.collections.find(c=>c.id===item.target.id);return c?{path:'/coleccion/'+c.slug}:null;}default:return null;}
- }
- srcset(media=this.media){const urls=media?.urls;if(!urls)return null;return (['thumbnail','medium','large','original'] as const).map((key,i)=>{const width=media?.objects?.find(item=>item.variant===key)?.width??[320,720,1200,2000][i];return safeImage(urls[key])?`${urls[key]} ${width}w`:null;}).filter(Boolean).join(', ')||null;}
+  @Input() content: HomeContent = DEFAULT_HOME;
+  @Input() media: ProductMedia | null | undefined = null;
+  @Input() categories: Category[] = [];
+  @Input() collections: Collection[] = [];
+  @Input() preview = false;
+  @Input() forceMobile = false;
+  @Input() slides: HomeSlide[] = [];
+
+  readonly index = signal(0);
+  readonly image = safeImage;
+  paused = false;
+  pauseOnHover = false;
+  private timer?: ReturnType<typeof setInterval>;
+  private touchX: number | null = null;
+
+  ngOnInit() {
+    const reduce = typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+    if (this.preview || this.slides.length <= 1 || reduce) return;
+    this.timer = setInterval(() => {
+      if (!this.paused && !this.pauseOnHover) this.next();
+    }, 6000);
+  }
+
+  ngOnDestroy() { if (this.timer !== undefined) clearInterval(this.timer); }
+  current(): HomeSlide { return this.slides[this.index()] ?? this.slides[0] ?? { content: this.content, media: this.media ?? null }; }
+  go(index: number) { this.index.set(Math.max(0, Math.min(index, this.slides.length - 1))); }
+  next() { if (this.slides.length) this.go((this.index() + 1) % this.slides.length); }
+  previous() { if (this.slides.length) this.go((this.index() + this.slides.length - 1) % this.slides.length); }
+  togglePause() { this.paused = !this.paused; }
+
+  startSwipe(event: TouchEvent) {
+    this.touchX = event.changedTouches[0]?.clientX ?? null;
+    this.pauseOnHover = true;
+  }
+  endSwipe(event: TouchEvent) {
+    const end = event.changedTouches[0]?.clientX;
+    if (this.touchX !== null && end !== undefined && Math.abs(end - this.touchX) > 45) {
+      if (end < this.touchX) this.next();
+      else this.previous();
+    }
+    this.touchX = null;
+    this.pauseOnHover = false;
+  }
+
+  displayMedia(slide: HomeSlide) { return this.forceMobile && slide.mobileMedia ? slide.mobileMedia : slide.media; }
+  legacyBackdrop(slide: HomeSlide) { return !this.forceMobile && !isFixedHomeCover(slide.media, 'DESKTOP'); }
+  position(slide: HomeSlide) { return slide.content.frameX + '% ' + slide.content.frameY + '%'; }
+
+  link(item: HomeLink): { path: string; fragment?: string } | null {
+    switch (item?.target?.type) {
+      case 'catalog': return { path: '/catalogo' };
+      case 'collections': return { path: '/', fragment: 'colecciones' };
+      case 'category': {
+        const category = this.categories.find(value => value.id === item.target.id);
+        return category ? { path: '/categoria/' + category.slug } : null;
+      }
+      case 'collection': {
+        const collection = this.collections.find(value => value.id === item.target.id);
+        return collection ? { path: '/coleccion/' + collection.slug } : null;
+      }
+      default: return null;
+    }
+  }
+
+  srcset(media: ProductMedia | null | undefined) {
+    const sources = new Map<number, string>();
+    for (const object of media?.objects ?? []) {
+      const url = safeImage(media?.urls[object.variant]);
+      if (url && object.width > 0) sources.set(object.width, url);
+    }
+    if (sources.size) return [...sources].sort(([a], [b]) => a - b).map(([width, url]) => url + ' ' + width + 'w').join(', ');
+    return safeImage(media?.urls.large) ?? '';
+  }
 }
