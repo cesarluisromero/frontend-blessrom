@@ -10,17 +10,41 @@ import { ProductCard } from './product-card';
 <main>
  @if(loading()){<p role="status">Preparando esta selección…</p>}
  @if(error()){<section class="empty" role="alert"><h1>No encontramos esta selección</h1><p>{{error()}}</p><a class="button" routerLink="/catalogo">Volver al catálogo</a></section>}
- @if(entity();as item){@if(kind()==='category'){<header class="category-header"><nav aria-label="Ruta"><a routerLink="/">Inicio</a><span>/</span><a routerLink="/catalogo">Categorías</a><span>/</span><span aria-current="page">{{item.name}}</span></nav><h1>{{item.name}}</h1></header>}@else{<header class="editorial" [class.with-cover]="cover(item)">
+ @if(entity();as item){@if(kind()==='category'){
+ <header class="category-header">
+  <nav aria-label="Ruta"><a routerLink="/">Inicio</a><span>/</span><a routerLink="/catalogo">Categorías</a><span>/</span><span aria-current="page">{{item.name}}</span></nav>
+  <div class="category-title-row">
+   <h1>{{item.name}}</h1>
+   <div class="tools">
+    <label>Ordenar
+     <select [value]="sort" (change)="setSort($any($event.target).value)">
+      <option value="name">Nombre</option>
+      <option value="newest">Novedades</option>
+      <option value="price-asc">Menor precio</option>
+      <option value="price-desc">Mayor precio</option>
+     </select>
+    </label>
+    <a routerLink="/catalogo" [queryParams]="filter(item)">Todos los filtros</a>
+   </div>
+  </div>
+ </header>}@else{<header class="editorial" [class.with-cover]="cover(item)">
   @if(cover(item);as image){<img [src]="image" [alt]="item.name" fetchpriority="high">}
   <div><p class="eyebrow">Blessrom / {{kind()==='collection'?'Colección':'Categoría'}}</p><h1>{{item.name}}</h1><p>{{item.description||'Una selección creada para acompañar tu estilo.'}}</p><a routerLink="/catalogo" [queryParams]="filter(item)">Ver en el catálogo completo ↗</a></div>
  </header>}
- <section class="products"><div class="heading"><div><p class="eyebrow">{{kind()==='category'?'Catálogo':'Selección actual'}}</p><h2>{{products().total}} productos</h2></div><div class="tools">@if(kind()==='category'){<label>Ordenar <select [value]="sort" (change)="setSort($any($event.target).value)"><option value="name">Nombre</option><option value="newest">Novedades</option><option value="price-asc">Menor precio</option><option value="price-desc">Mayor precio</option></select></label>}<a routerLink="/catalogo" [queryParams]="filter(item)">Todos los filtros</a></div></div>
+ <section class="products">
+ @if(kind()==='collection'){
+  <div class="heading"><div><p class="eyebrow">Selección actual</p><h2>{{products().total}} productos</h2></div><a routerLink="/catalogo" [queryParams]="filter(item)">Todos los filtros</a></div>
+ }
  @if(!products().items.length){<p class="empty">Todavía no hay productos publicados en esta selección.</p>}
  <div class="grid">@for(product of products().items;track product.id){<app-product-card [product]="product" />}</div>
  <nav class="pagination" aria-label="Paginación"><button (click)="change(-1)" [disabled]="page===0||loading()">Anterior</button><span>Página {{page+1}}</span><button (click)="change(1)" [disabled]="(page+1)*size>=products().total||loading()">Siguiente</button></nav>
  </section>}
 </main>`,styles:[`
 main{max-width:1400px;margin:auto;padding:45px 6%;min-height:70vh}.category-header{padding:10px 0 28px;border-bottom:1px solid var(--line)}.category-header nav{display:flex;gap:10px;color:#6b7788;font-size:13px}.category-header nav a{color:#174f96}.category-header h1{font:52px Georgia,serif;color:#14243e;margin:28px 0 0}.editorial{background:#e8eef5;border-radius:120px 12px 12px 12px;min-height:390px;display:grid;place-items:center;padding:60px;position:relative;overflow:hidden}.editorial.with-cover{grid-template-columns:1fr 1fr;padding:0}.editorial img{width:100%;height:100%;min-height:480px;object-fit:cover;object-position:center top}.editorial>div{padding:55px}.editorial h1{font-size:58px;margin:18px 0}.editorial p:not(.eyebrow){max-width:560px;color:#526276;font-size:18px;line-height:1.6}.editorial a,.heading a{color:#174f96;font-weight:700}.products{padding:32px 0 20px}.heading{display:flex;justify-content:space-between;align-items:end;margin-bottom:30px}.heading h2{font-size:36px;margin:10px 0 0}.tools{display:flex;align-items:center;gap:24px}.tools label{display:flex;align-items:center;gap:8px;color:#526276}.tools select{border:1px solid var(--line);border-radius:6px;padding:10px 28px 10px 12px;background:white;color:#14243e}.grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:22px}.pagination{display:flex;justify-content:center;align-items:center;gap:20px;margin-top:40px}.empty{text-align:center;padding:70px 20px}@media(max-width:950px){.grid{grid-template-columns:repeat(2,minmax(0,1fr))}.editorial.with-cover{grid-template-columns:1fr}.editorial img{min-height:360px;height:420px}.editorial h1{font-size:44px}}@media(max-width:520px){main{padding:25px 18px}.editorial,.editorial>div{padding:30px}.editorial h1{font-size:38px}.category-header h1{font-size:40px}.grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.heading{align-items:start;gap:15px;flex-direction:column}.tools{width:100%;justify-content:space-between;gap:10px}.tools label{font-size:13px}.tools select{padding:9px 20px 9px 8px}}
+.category-title-row{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px 24px;margin-top:20px}
+.category-title-row h1{margin:0;overflow-wrap:anywhere}
+.category-title-row .tools{flex-wrap:wrap}
+.category-title-row .tools a{color:#174f96;font-weight:700}
 `]})
 export class MerchandisingPage {
  private readonly http=inject(HttpClient);private readonly route=inject(ActivatedRoute);private readonly seo=inject(SeoService);private readonly destroyRef=inject(DestroyRef);
