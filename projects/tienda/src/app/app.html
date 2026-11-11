@@ -21,11 +21,11 @@
   <nav aria-label="Navegación principal" [class.open]="menuOpen()">
     <a routerLink="/catalogo" [queryParams]="{sort:'newest'}">Novedades</a><a routerLink="/catalogo">Todo el catálogo</a>
     @if (categories().length) {
-      <details>
+      <details name="storefront-navigation" #categoryMenu>
         <summary>Categorías</summary>
         <div class="nav-panel">
           @for (category of categories(); track category.id) {
-            <a [routerLink]="['/categoria', category.slug]" (click)="menuOpen.set(false)">{{
+            <a [routerLink]="['/categoria', category.slug]" (click)="categoryMenu.open = false; menuOpen.set(false)">{{
               category.name
             }}</a>
           }
@@ -33,11 +33,11 @@
       </details>
     }
     @if (collections().length) {
-      <details>
+      <details name="storefront-navigation" #collectionMenu>
         <summary>Colecciones</summary>
         <div class="nav-panel">
           @for (collection of collections(); track collection.id) {
-            <a [routerLink]="['/coleccion', collection.slug]" (click)="menuOpen.set(false)">{{
+            <a [routerLink]="['/coleccion', collection.slug]" (click)="collectionMenu.open = false; menuOpen.set(false)">{{
               collection.name
             }}</a>
           }
