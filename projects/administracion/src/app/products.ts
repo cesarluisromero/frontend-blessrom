@@ -9,7 +9,9 @@ import { Category, Collection, AttributeDefinition, Content, Product, Page, Prod
 export class Products {
  private readonly destroy=inject(DestroyRef);readonly safeImage=safeImage;readonly imageErrors=signal<string[]>([]);readonly purges=signal<HomeCoverPurge[]>([]);private purgeTimers=new Map<string,ReturnType<typeof setTimeout>>();
  private readonly http=inject(HttpClient);
- private readonly route=inject(ActivatedRoute,{optional:true});private readonly router=inject(Router,{optional:true});query='';statusFilter='';
+ private readonly route=inject(ActivatedRoute,{optional:true});private readonly router=inject(Router,{optional:true});query='';statusFilter='';categoryFilter='';
+ private appliedFilters={query:'',status:'',category:''};
+ private captureFilters(){this.appliedFilters={query:this.query.trim(),status:this.statusFilter,category:this.categoryFilter};}
  readonly editorTab=signal<'content'|'variants'|'images'|'publication'>('content');
  readonly items=signal<Product[]>([]);readonly categories=signal<Category[]>([]);readonly collections=signal<Collection[]>([]);readonly attributes=signal<AttributeDefinition[]>([]);
  readonly selected=signal<Product|null>(null);readonly busy=signal(false);readonly error=signal('');readonly notice=signal('');
@@ -19,11 +21,11 @@ export class Products {
  slug='';categoryName='';categorySlug='';categoryParent='';categoryDescription='';collectionName='';collectionSlug='';collectionDescription='';
  optionValues:Record<string,string>={};draft:Content=this.blank();
  readonly money=money; readonly confirmedArchive=signal(false);
- constructor(){this.destroy.onDestroy(()=>{for(const timer of this.purgeTimers.values())clearTimeout(timer);});try{for(const id of JSON.parse(sessionStorage.getItem('blessrom-product-purges')??'[]'))this.watchPurge(id);}catch{}this.query=this.route?.snapshot.queryParamMap.get('q')??'';this.statusFilter=this.route?.snapshot.queryParamMap.get('status')??'';void this.load();this.http.get<AiStudioStatus>('/api/v1/admin/ai-studio/status').subscribe({next:value=>this.aiStatus.set(value),error:()=>{}});}
+ constructor(){this.destroy.onDestroy(()=>{for(const timer of this.purgeTimers.values())clearTimeout(timer);});try{for(const id of JSON.parse(sessionStorage.getItem('blessrom-product-purges')??'[]'))this.watchPurge(id);}catch{}this.query=this.route?.snapshot.queryParamMap.get('q')??'';this.statusFilter=this.route?.snapshot.queryParamMap.get('status')??'';this.categoryFilter=this.route?.snapshot.queryParamMap.get('category')??'';this.captureFilters();void this.load();this.http.get<AiStudioStatus>('/api/v1/admin/ai-studio/status').subscribe({next:value=>this.aiStatus.set(value),error:()=>{}});}
  private blank():Content{return {name:'',description:'',categoryId:'',imageUrl:null,collectionIds:[],variants:[{sku:'',price:0.01,enabled:true,attributes:{talla:'',color:''}}]};}
  private async run(action:()=>Promise<void>){if(this.busy())return;this.busy.set(true);this.error.set('');this.notice.set('');try{await action();}catch(e){this.error.set(errorMessage(e));}finally{this.busy.set(false);}}
- private async refreshList(){const params:Record<string,string|number>={page:this.page,size:this.size};if(this.query.trim())params['q']=this.query.trim();if(this.statusFilter)params['status']=this.statusFilter;const data=await firstValueFrom(this.http.get<Page<Product>>('/api/v1/admin/products',{params}));this.items.set(data.items);this.total.set(data.total);}
- async filter(){this.page=0;this.router?.navigate([],{relativeTo:this.route??undefined,queryParams:{q:this.query||null,status:this.statusFilter||null},queryParamsHandling:'merge'});await this.run(()=>this.refreshList());}
+ private async refreshList(){const {query,status,category}=this.appliedFilters;const params:Record<string,string|number>={page:this.page,size:this.size};if(query)params['q']=query;if(status)params['status']=status;if(this.categories().some(c=>c.id===category)){params['category']=category;params['includeSubcategories']='false';}const data=await firstValueFrom(this.http.get<Page<Product>>('/api/v1/admin/products',{params}));this.items.set(data.items);this.total.set(data.total);}
+ async filter(){if(this.busy())return;this.captureFilters();this.page=0;this.router?.navigate([],{relativeTo:this.route??undefined,queryParams:{q:this.query||null,status:this.statusFilter||null,category:this.categoryFilter||null},queryParamsHandling:'merge'});await this.run(()=>this.refreshList());}
  async load(){await this.run(async()=>{const [categories,collections,attributes]=await Promise.all([
   firstValueFrom(this.http.get<Category[]>('/api/v1/admin/categories')),firstValueFrom(this.http.get<Collection[]>('/api/v1/admin/collections')),firstValueFrom(this.http.get<AttributeDefinition[]>('/api/v1/admin/attributes'))]);
   this.categories.set(categories);this.collections.set(collections);this.attributes.set(attributes);await this.refreshList();});}

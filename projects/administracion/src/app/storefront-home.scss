@@ -14,3 +14,13 @@
 .proposal-images img:not(.mobile) { height: auto; aspect-ratio: 3 / 1; object-fit: contain; }
 .proposal-images img.mobile { height: auto; aspect-ratio: 4 / 5; object-fit: contain; }
 @media (max-width: 540px) { .cover-uploads { grid-template-columns: 1fr; } }
+.cover-workspace .cover-list { grid-column: 1; grid-row: 1; }
+.cover-workspace .cover-fields { grid-column: 1; grid-row: 2; }
+.cover-workspace .preview { grid-column: 2; grid-row: 1 / span 2; position: sticky; top: 16px; align-self: start; }
+.cover-workspace .section-title { flex-wrap: wrap; }
+.cover-workspace .slide-list > .slide-select { border: 1px solid var(--line); border-radius: 8px; }
+.cover-workspace button.selected { outline: 2px solid #a77b42; }
+@media (max-width: 1050px) {
+  .cover-workspace .preview { grid-column: 1; grid-row: 2; position: static; }
+  .cover-workspace .cover-fields { grid-row: 3; }
+}
