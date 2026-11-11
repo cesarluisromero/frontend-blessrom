@@ -42,7 +42,7 @@ export class Product {
   constructor(){this.route.paramMap.pipe(takeUntilDestroyed(this.destroy)).subscribe(params=>this.load(params.get('id')));this.destroy.onDestroy(()=>this.request?.unsubscribe());}
   private attributeRank(key:string){return key.toLowerCase()==='color'?0:['talla','size'].includes(key.toLowerCase())?1:2;}
   attributeLabel(key:string){return key.charAt(0).toUpperCase()+key.slice(1);}
-  attributeValues(key:string){return [...new Set(this.variants().map(item=>item.attributes[key]).filter(Boolean))];}
+  attributeValues(key:string){const colorKey=this.attributeKeys().find(value=>value.toLowerCase()==='color');const variants=['talla','size'].includes(key.toLowerCase())&&colorKey?this.variants().filter(item=>item.attributes[colorKey]===this.selected()[colorKey]):this.variants();return [...new Set(variants.map(item=>item.attributes[key]).filter(Boolean))];}
   choose(key:string,value:string){const candidates=this.variants().filter(item=>item.attributes[key]===value);const variant=candidates.find(item=>this.attributeKeys().every(other=>other===key||item.attributes[other]===this.selected()[other]))??candidates.find(item=>(item.available??0)>0)??candidates[0];if(variant)this.selectVariant(variant);}
   chooseVariant(id:string){const variant=this.variants().find(item=>item.id===id);if(variant)this.selectVariant(variant);}
   private selectVariant(variant:Variant){this.selected.set({...variant.attributes});this.selectedId.set(variant.id??null);this.quantity=1;this.notice.set('');}

@@ -1,4 +1,5 @@
-import {Component,inject,signal} from '@angular/core';
+import {Component,DestroyRef,inject,signal} from '@angular/core';
+import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
 import {DatePipe} from '@angular/common';
 import {FormsModule,NgForm} from '@angular/forms';
 import {HttpClient} from '@angular/common/http';
@@ -9,6 +10,7 @@ interface OrderSummary {id:string;orderNumber?:string;version:number;status:stri
 interface ReturnSummary {id:string;order_id:string;orderNumber?:string;status:string;reason:string;created_at:string}
 @Component({selector:'app-orders',imports:[FormsModule,DatePipe,RouterLink],templateUrl:'./orders.html',styleUrl:'./products.scss'})
 export class Orders {
+ readonly orderPageSize=5;readonly detailLoading=signal(false);private detailSequence=0;private destroy=inject(DestroyRef);
  private http=inject(HttpClient);private route=inject(ActivatedRoute,{optional:true});private router=inject(Router,{optional:true});orders=signal<OrderSummary[]>([]);returns=signal<ReturnSummary[]>([]);returnTotal=signal(0);rates=signal<ShippingRate[]>([]);selected=signal<Order|null>(null);busy=signal(false);error=signal('');notice=signal('');total=signal(0);page=0;
  tab:'orders'|'returns'|'rates'='orders';q='';filterStatus='';paymentStatusFilter='';paymentMethodFilter='';from='';to='';returnStatusFilter='';paymentException=false;
  departmentName='';provinceName='';districtCode='';districtName='';amount:number|null=null;active=true;editing:ShippingRate|null=null;readonly money=money;
@@ -31,7 +33,8 @@ export class Orders {
  async selectTab(tab:'orders'|'returns'|'rates'){this.tab=tab;await this.applyFilters();}
  private async loadRates(){this.rates.set(await firstValueFrom(this.http.get<ShippingRate[]>('/api/v1/admin/shipping-rates')));}
  async pageTo(page:number){if(page<0)return;this.page=page;await this.run(()=>this.tab==='returns'?this.loadReturns():this.loadOrders());}
- async open(id:string){await this.run(async()=>{const order=await firstValueFrom(this.http.get<Order>('/api/v1/admin/orders/'+id));this.selected.set(order);this.loadShipment(order);});}
+ ngOnInit(){this.route?.paramMap.pipe(takeUntilDestroyed(this.destroy)).subscribe(params=>{const id=params.get('id');if(id)void this.open(id);else{this.detailSequence++;this.selected.set(null);this.detailLoading.set(false);}});}
+ async open(id:string){const sequence=++this.detailSequence;this.detailLoading.set(true);this.selected.set(null);try{const order=await firstValueFrom(this.http.get<Order>('/api/v1/admin/orders/'+id));if(sequence!==this.detailSequence||this.destroy.destroyed)return;this.selected.set(order);this.loadShipment(order);}catch(e){if(sequence===this.detailSequence)this.error.set(errorMessage(e));}finally{if(sequence===this.detailSequence)this.detailLoading.set(false);}}
  private loadShipment(order:Order){const shipment=order.shipment;this.shipmentVersion=shipment?.version??0;this.shipmentCarrier=shipment?.carrier??'';this.trackingNumber=shipment?.tracking_number??'';this.estimatedDelivery=shipment?.estimated_delivery??'';this.shipmentNotes=shipment?.notes??'';}
  async saveShipment(form:NgForm){const order=this.selected();if(!order||form.invalid)return;await this.run(async()=>{const updated=await firstValueFrom(this.http.put<Order>('/api/v1/admin/orders/'+order.id+'/shipment',{version:this.shipmentVersion,carrier:this.shipmentCarrier,trackingNumber:this.trackingNumber,estimatedDelivery:this.estimatedDelivery,notes:this.shipmentNotes||null}));this.selected.set(updated);this.loadShipment(updated);this.notice.set('Datos de envío guardados.');});}
  async advance(){const order=this.selected(),next=order&&this.next(order.status);if(!order||!next)return;if(next.status==='SHIPPED'&&!order.shipment){this.error.set('Guarda los datos de envío antes de marcar el pedido como enviado.');return;}await this.run(async()=>{const updated=await firstValueFrom(this.http.post<Order>('/api/v1/admin/orders/'+order.id+'/status',{version:order.version,status:next.status}));this.selected.set(updated);this.loadShipment(updated);await this.loadOrders();this.notice.set('Pedido actualizado a: '+this.status(updated.status)+'.');});}
