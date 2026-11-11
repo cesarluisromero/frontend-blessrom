@@ -82,6 +82,21 @@ export class Products {
  async applyAi(result:AiStudioResult,mode:'GHOST'|'CUTOUT_FALLBACK'='GHOST'){const job=this.aiJob(),product=this.selected();if(!job||!product)return;try{await firstValueFrom(this.http.post('/api/v1/admin/ai-studio/jobs/'+job.id+'/apply',{resultIds:[result.id],homeVersion:null,productImageMode:mode}));this.setProduct(await firstValueFrom(this.http.get<Product>('/api/v1/admin/products/'+product.id)));this.notice.set((mode==='GHOST'?'Maniquí fantasma':'Recorte transparente')+' añadido al borrador. Publica el producto para mostrarlo en la tienda.');await this.loadAiJobs(product.id);}catch(e){this.error.set(errorMessage(e));}}
  private inferGarmentKind(){const category=this.categories().find(item=>item.id===this.draft.categoryId);const text=(category?.name??'').toLocaleLowerCase('es');this.garmentKind.set(/vestid/.test(text)?'DRESS':/pantal|short|falda|bermuda/.test(text)?'BOTTOM':'TOP');}
  async setPrimary(image:MediaAsset){const product=this.selected();if(!product)return;await this.run(async()=>{await firstValueFrom(this.http.put('/api/v1/admin/products/'+product.id+'/media/'+image.id,{altText:image.alt_text,primary:true}));await this.loadMedia(product.id);this.notice.set('Imagen principal actualizada.');});}
+ mediaColors(image:MediaAsset) {
+   const product=this.selected();
+   const variants=[...(product?.draft?.variants??[]),...(product?.published?.variants??[])];
+   const colors=variants.flatMap(v=>Object.entries(v.attributes).filter(([key,value])=>key.toLowerCase()==='color'&&value).map(([,value])=>value));
+   return [...new Set(image.color_value?[...colors,image.color_value]:colors)];
+ }
+ async saveMediaColor(image:MediaAsset,colorValue:string) {
+   const product=this.selected();
+   if(!product||colorValue===(image.color_value??''))return;
+   await this.run(async()=>{
+     await firstValueFrom(this.http.put('/api/v1/admin/products/'+product.id+'/media/'+image.id,{colorValue}));
+     await this.loadMedia(product.id);
+     this.notice.set('Color de la imagen guardado.');
+   });
+ }
  async saveAlt(image:MediaAsset,altText:string){const product=this.selected();if(!product)return;await this.run(async()=>{await firstValueFrom(this.http.put('/api/v1/admin/products/'+product.id+'/media/'+image.id,{altText:altText.trim()||null,primary:false}));await this.loadMedia(product.id);this.notice.set('Texto alternativo guardado.');});}
  async moveMedia(index:number,delta:number){const product=this.selected();const next=index+delta;if(!product||next<0||next>=this.media().length)return;await this.run(async()=>{const ordered=[...this.media()];[ordered[index],ordered[next]]=[ordered[next],ordered[index]];this.media.set(await firstValueFrom(this.http.put<MediaAsset[]>('/api/v1/admin/products/'+product.id+'/media-order',{assetIds:ordered.map(item=>item.id)})));this.notice.set('Orden de la galería actualizado.');});}
 

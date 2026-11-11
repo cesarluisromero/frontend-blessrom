@@ -23,12 +23,12 @@ export interface AttributeDefinition { id:string; code:string; name:string; type
 export interface Variant { id?:string; sku:string; attributes:Record<string,string>; price:string|number; enabled:boolean; available?:number; }
 export type MediaVariant='original'|'large'|'medium'|'thumbnail';
 export interface MediaObject { variant:MediaVariant; width:number; height:number; byte_size?:number; }
-export interface ProductMedia { id:string; alt_text:string|null; is_primary:boolean; display_order?:number; urls:Record<MediaVariant,string>; objects?:MediaObject[]; }
+export interface ProductMedia { color_value?:string|null; id:string; alt_text:string|null; is_primary:boolean; display_order?:number; urls:Record<MediaVariant,string>; objects?:MediaObject[]; }
 export interface AiStudioStatus {enabled:boolean;configured:boolean;manualUploadAvailable:boolean;maxCorrections:number;catalogCanvas:string;desktopCover:string;mobileCover:string}
 export interface AiStudioResult {id:string;slot:number;revision:number;status:string;stage?:'CUTOUT'|'GHOST';image_approved:boolean;copy_approved:boolean;cutout_approved?:boolean;ghost_approved?:boolean;cutout_revision?:number;ghost_revision?:number;fallbackAllowed?:boolean;feedback?:string|null;content:Record<string,string>;media?:ProductMedia;cutoutMedia?:ProductMedia;desktopMedia?:ProductMedia;mobileMedia?:ProductMedia}
 export interface AiStudioJob {id:string;job_type:string;product_id?:string|null;page_key?:string|null;stage?:'CUTOUT'|'GHOST';status:string;attempts:number;error_code?:string|null;error_message?:string|null;results:AiStudioResult[];created_at:string;updated_at:string}
 export interface Content { name:string; description:string; categoryId:string; imageUrl:string|null; media?:ProductMedia[]; variants:Variant[]; collectionIds?:string[]; }
-export interface Product { thumbnailUrl?:string|null; imageAlt?:string|null; deleting?:boolean; id:string; slug:string; version:number; archived:boolean; draft?:Content|null; published?:Content|null; content?:Content; }
+export interface Product { colorSwatches?:Record<string,string>; thumbnailUrl?:string|null; imageAlt?:string|null; deleting?:boolean; id:string; slug:string; version:number; archived:boolean; draft?:Content|null; published?:Content|null; content?:Content; }
 export interface FacetOption {value:string;label:string;count:number}
 export interface ProductFacets {colors:FacetOption[];sizes:FacetOption[];price:{min:number|string|null;max:number|string|null}}
 export interface Page<T> { items:T[]; page:number; size:number; total:number; facets?:ProductFacets; }

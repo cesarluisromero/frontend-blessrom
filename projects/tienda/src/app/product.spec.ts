@@ -16,6 +16,23 @@ function setup(variants:Variant[]){
 }
 function variant(id:string,color:string,size:string,available=2):Variant{return {id,sku:id,attributes:{color,talla:size},enabled:true,price:25,available};}
 describe('Color y talla',()=>{
+ it('filtra la galería por color y conserva la miniatura al cambiar talla',()=>{
+   const page=setup([variant('blue-m','Azul','M'),variant('blue-l','Azul','L'),variant('black-s','Negro','S')]);
+   const product=page.product()!;
+   const urls={original:'',large:'',medium:'',thumbnail:''};
+   const front={id:'front',alt_text:null,is_primary:true,color_value:'Azul',urls};
+   const back={...front,id:'back',is_primary:false};
+   page.product.set({...product,content:{...product.content!,media:[front,back]}});
+   page.choose('color','Azul');
+   expect(page.gallery()).toEqual([front,back]);
+   expect(page.activeMedia()).toBe(front);
+   page.selectMedia(back);
+   page.choose('talla','L');
+   expect(page.activeMedia()).toBe(back);
+   page.choose('color','Negro');
+   expect(page.gallery()).toEqual([]);
+   expect(page.mainImage()).toBeNull();
+ });
  it('muestra solo tallas del color y no cambia de color al elegir talla',()=>{const page=setup([variant('green-m','Verde','M'),variant('pink-l','Rosado','L'),variant('pink-s','Rosado','S',0)]);page.choose('color','Verde');expect(page.attributeValues('talla')).toEqual(['M']);page.choose('color','Rosado');expect(page.attributeValues('talla')).toEqual(['L','S']);expect(page.attributeAvailable('talla','S')).toBe(false);page.choose('talla','M');expect(page.selected()['color']).toBe('Rosado');expect(page.selectedVariant()?.id).toBe('pink-l');});
  it('exige elegir un SKU cuando los atributos coinciden',()=>{const page=setup([variant('one','Azul','M'),variant('two','Azul','M')]);page.choose('color','Azul');expect(page.selectedVariant()).toBeNull();page.chooseVariant('two');expect(page.selectedVariant()?.id).toBe('two');});
 });

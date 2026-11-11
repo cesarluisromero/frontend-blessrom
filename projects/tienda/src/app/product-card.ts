@@ -28,5 +28,8 @@ export class ProductCard {
   srcset() { return mediaSrcset(this.media()); }
   price() { const prices = this.product.content?.variants.filter(item => item.enabled).map(item => Number(item.price)) ?? []; return money(prices.length ? Math.min(...prices) : 0); }
   colors() { const variants = this.product.content?.variants.filter(item => item.enabled) ?? []; const key = Object.keys(variants[0]?.attributes ?? {}).find(item => item.toLowerCase() === 'color'); return key ? [...new Set(variants.map(item => item.attributes[key]).filter(Boolean))] : []; }
-  colorStyle(value:string) { const named:Record<string,string> = {rojo:'#c62828',azul:'#24579b',verde:'#3f6b4b',negro:'#202124',blanco:'#f8f8f8',amarillo:'#e0ad24',rosado:'#d77a91',morado:'#7653a6',gris:'#8b929b',beige:'#c7ad82',marron:'#8b5e3c',cafe:'#8b5e3c',naranja:'#d97828'}; const normalized=value.trim().toLowerCase(); return /^#[0-9a-f]{6}$/i.test(value.trim()) ? value.trim() : named[normalized] ?? '#dfe4ea'; }
+  colorStyle(value:string) { return fallbackSwatch(value); }
+}
+
+export function fallbackSwatch(value:string) {const named:Record<string,string> = {rojo:'#c62828',azul:'#24579b',verde:'#3f6b4b',negro:'#202124',blanco:'#f8f8f8',amarillo:'#e0ad24',rosado:'#d77a91',morado:'#7653a6',gris:'#8b929b',beige:'#c7ad82',marron:'#8b5e3c',cafe:'#8b5e3c',naranja:'#d97828'}; const normalized=value.trim().toLowerCase(); return /^#[0-9a-f]{6}$/i.test(value.trim()) ? value.trim() : named[normalized] ?? '#dfe4ea';
 }
