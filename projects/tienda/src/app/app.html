@@ -4,9 +4,27 @@
   <a routerLink="/" class="brand" aria-label="Blessrom, inicio"
     ><img src="/blessrom-logo.webp" alt="Blessrom C &amp; M" width="220" height="74"
   /></a>
-  <form class="site-search" (ngSubmit)="search()" role="search">
+  <form class="site-search" (ngSubmit)="search()" role="search" (focusout)="scheduleSuggestionsClose()">
     <label class="sr-only" for="global-search">Buscar por nombre o SKU</label>
-    <input id="global-search" name="search" [(ngModel)]="searchTerm" type="search" maxlength="100" placeholder="Buscar prendas por nombre o SKU" />
+    <div class="site-search-field">
+      <input id="global-search" name="search" [(ngModel)]="searchTerm" type="search" maxlength="100" placeholder="Buscar prendas por nombre o SKU"
+        role="combobox" aria-autocomplete="list" [attr.aria-expanded]="suggestionsOpen()" [attr.aria-controls]="suggestionsOpen() ? 'search-suggestions' : null"
+        [attr.aria-activedescendant]="activeSuggestionId()" (input)="searchInputChanged()" (focus)="suggestionsOpen.set(searchTerm.trim().length >= 2)" (keydown)="suggestionKeydown($event)" />
+      @if (suggestionsOpen()) {
+        <div id="search-suggestions" class="search-suggestions" role="listbox">
+          @if (suggestionsLoading()) { <div class="search-suggestion-status" role="status">Buscando…</div> }
+          @if (!suggestionsLoading() && suggestions().length === 0 && searchTerm.trim().length >= 2) { <div class="search-suggestion-status">Sin coincidencias</div> }
+          @for (suggestion of suggestions(); track suggestion.id; let index = $index) {
+            <a class="search-suggestion" [class.active]="index === activeSuggestionIndex()" [id]="'search-suggestion-'+index" role="option" [attr.aria-selected]="index === activeSuggestionIndex()"
+              [routerLink]="['/producto', suggestion.id]" (mousedown)="$event.preventDefault()" (click)="selectSuggestion()">
+              @if (suggestion.thumbnailUrl && !failedSuggestionImages().has(suggestion.id)) { <img [src]="suggestion.thumbnailUrl" [alt]="suggestion.imageAlt || suggestion.name" (error)="markSuggestionImageFailed(suggestion.id)" /> }
+              @else { <span class="search-suggestion-placeholder" aria-hidden="true">B</span> }
+              <span>{{ suggestion.name }}</span>
+            </a>
+          }
+        </div>
+      }
+    </div>
     <button type="submit" aria-label="Buscar">⌕</button>
   </form>
   <div class="header-actions"><a routerLink="/cuenta"><span aria-hidden="true">♙</span> Mi cuenta</a><a routerLink="/carrito"><span aria-hidden="true">♧</span> Carrito <span class="cart-count">{{ cart.count() }}</span></a></div>
