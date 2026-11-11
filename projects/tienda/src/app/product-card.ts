@@ -14,7 +14,7 @@ export function mediaSrcset(media?: ProductMedia | null): string | null {
   @if(product.content; as content) {
     <a class="product-card" [class.horizontal]="horizontal" [routerLink]="['/producto',product.id]">
       <div class="picture">@if(image();as url){<img [src]="url" [attr.srcset]="srcset()" [attr.sizes]="horizontal ? '(max-width:600px) 42vw, 18vw' : '(max-width:600px) 46vw, (max-width:1000px) 30vw, 22vw'" [alt]="media()?.alt_text || content.name" loading="lazy" width="480" height="600">}@else{<div class="placeholder">Fotografía pendiente</div>}</div>
-      <div class="copy"><h3>{{content.name}}</h3><p class="price">Desde {{price()}}</p><div class="attributes">@for(value of colors();track value){<span class="color-option" [style.background-color]="colorStyle(value)" [attr.title]="value"><span>{{value}}</span></span>}</div><span class="details">Ver detalles <span aria-hidden="true">↗</span></span></div>
+      <div class="copy"><h3>{{content.name}}</h3><p class="price">Desde {{price()}}</p><div class="attributes">@for(value of colors();track value){<span class="color-option" [style.background-color]="colorStyle(value)"><span class="sr-only">{{value}}</span></span>}</div><span class="details">Ver detalles <span aria-hidden="true">↗</span></span></div>
     </a>
   }
 `, styles: [`
