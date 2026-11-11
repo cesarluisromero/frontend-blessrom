@@ -17,12 +17,14 @@ export class Products {
  readonly selected=signal<Product|null>(null);readonly busy=signal(false);readonly error=signal('');readonly notice=signal('');
  readonly total=signal(0);page=0;readonly size=12;
  readonly media=signal<MediaAsset[]>([]);readonly uploadProgress=signal('');
+ readonly initialPhoto=signal<File|null>(null);readonly initialPreview=signal('');readonly missingFields=signal<string[]>([]);
+ readonly suggested=signal<{name:string;description:string;categoryId:string;color:string}|null>(null);readonly suggestionBusy=signal(false);readonly suggestionError=signal('');
  readonly imageMode=signal<'manual'|'ai'>('manual');readonly aiStatus=signal<AiStudioStatus|null>(null);readonly aiJobs=signal<AiStudioJob[]>([]);readonly aiJob=computed(()=>this.aiJobs()[0]??null);readonly aiProgress=signal('');readonly aiFeedback=signal('');readonly aiReferences=signal<Partial<Record<AiReferenceRole,AiReference>>>({});readonly garmentKind=signal<'TOP'|'BOTTOM'|'DRESS'>('TOP');aiOriginalPreview='';private pollingJob='';
  slug='';categoryName='';categorySlug='';categoryParent='';categoryDescription='';collectionName='';collectionSlug='';collectionDescription='';
  optionValues:Record<string,string>={};draft:Content=this.blank();
  readonly money=money; readonly confirmedArchive=signal(false);
- constructor(){this.destroy.onDestroy(()=>{for(const timer of this.purgeTimers.values())clearTimeout(timer);});try{for(const id of JSON.parse(sessionStorage.getItem('blessrom-product-purges')??'[]'))this.watchPurge(id);}catch{}this.query=this.route?.snapshot.queryParamMap.get('q')??'';this.statusFilter=this.route?.snapshot.queryParamMap.get('status')??'';this.categoryFilter=this.route?.snapshot.queryParamMap.get('category')??'';this.captureFilters();void this.load();this.http.get<AiStudioStatus>('/api/v1/admin/ai-studio/status').subscribe({next:value=>this.aiStatus.set(value),error:()=>{}});}
- private blank():Content{return {name:'',description:'',categoryId:'',imageUrl:null,collectionIds:[],variants:[{sku:'',price:0.01,enabled:true,attributes:{talla:'',color:''}}]};}
+ constructor(){this.destroy.onDestroy(()=>{for(const timer of this.purgeTimers.values())clearTimeout(timer);if(this.initialPreview())URL.revokeObjectURL(this.initialPreview());});try{for(const id of JSON.parse(sessionStorage.getItem('blessrom-product-purges')??'[]'))this.watchPurge(id);}catch{}this.query=this.route?.snapshot.queryParamMap.get('q')??'';this.statusFilter=this.route?.snapshot.queryParamMap.get('status')??'';this.categoryFilter=this.route?.snapshot.queryParamMap.get('category')??'';this.captureFilters();void this.load();this.http.get<AiStudioStatus>('/api/v1/admin/ai-studio/status').subscribe({next:value=>this.aiStatus.set(value),error:()=>{}});}
+ private blank():Content{return {name:'',description:'',categoryId:'',imageUrl:null,collectionIds:[],variants:[{sku:'',price:0,enabled:true,attributes:{talla:'',color:''}}]};}
  private async run(action:()=>Promise<void>){if(this.busy())return;this.busy.set(true);this.error.set('');this.notice.set('');try{await action();}catch(e){this.error.set(errorMessage(e));}finally{this.busy.set(false);}}
  private async refreshList(){const {query,status,category}=this.appliedFilters;const params:Record<string,string|number>={page:this.page,size:this.size};if(query)params['q']=query;if(status)params['status']=status;if(this.categories().some(c=>c.id===category)){params['category']=category;params['includeSubcategories']='false';}const data=await firstValueFrom(this.http.get<Page<Product>>('/api/v1/admin/products',{params}));this.items.set(data.items);this.total.set(data.total);}
  async filter(){if(this.busy())return;this.captureFilters();this.page=0;this.router?.navigate([],{relativeTo:this.route??undefined,queryParams:{q:this.query||null,status:this.statusFilter||null,category:this.categoryFilter||null},queryParamsHandling:'merge'});await this.run(()=>this.refreshList());}
@@ -31,16 +33,28 @@ export class Products {
   this.categories.set(categories);this.collections.set(collections);this.attributes.set(attributes);await this.refreshList();});}
  name(p:Product){return (p.draft??p.published)?.name??p.slug;}
  state(p:Product){return p.archived?'Archivado':p.draft?(p.published?'Cambios sin publicar':'Borrador'):'Publicado';}
- newProduct(form:NgForm){if(form.dirty&&!confirm('¿Descartar los cambios sin guardar?'))return;this.selected.set(null);this.slug='';this.draft=this.blank();this.editorTab.set('content');this.confirmedArchive.set(false);form.form.markAsPristine();form.form.markAsUntouched();this.error.set('');this.notice.set('');}
- async open(p:Product,form:NgForm){if(form.dirty&&!confirm('¿Descartar los cambios sin guardar?'))return;await this.run(async()=>{const data=await firstValueFrom(this.http.get<Product>('/api/v1/admin/products/'+p.id));this.setProduct(data);await Promise.all([this.loadMedia(data.id),this.loadAiJobs(data.id)]);form.form.markAsPristine();});}
+ newProduct(form:NgForm){if(form.dirty&&!confirm('¿Descartar los cambios sin guardar?'))return;this.selected.set(null);this.slug='';this.draft=this.blank();this.editorTab.set('images');this.confirmedArchive.set(false);this.clearInitialPhoto();this.missingFields.set([]);form.form.markAsPristine();form.form.markAsUntouched();this.error.set('');this.notice.set('');}
+ async open(p:Product,form:NgForm){if(form.dirty&&!confirm('¿Descartar los cambios sin guardar?'))return;this.clearInitialPhoto();await this.run(async()=>{const data=await firstValueFrom(this.http.get<Product>('/api/v1/admin/products/'+p.id));this.setProduct(data);await Promise.all([this.loadMedia(data.id),this.loadAiJobs(data.id)]);form.form.markAsPristine();});}
+ categoryNameById(id:string){return this.categories().find(item=>item.id===id)?.name??'Categoría sugerida';}
  private setProduct(p:Product){this.selected.set(p);this.slug=p.slug;this.draft=structuredClone(p.draft??p.published??this.blank());this.draft.collectionIds??=[];this.inferGarmentKind();this.confirmedArchive.set(false);}
- addVariant(form:NgForm){if(this.draft.variants.length>=50)return;this.draft.variants.push({sku:'',attributes:{talla:'',color:''},price:0.01,enabled:true});form.form.markAsDirty();}
+ slugPreview(){if(this.selected())return this.slug;return this.draft.name.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'').slice(0,110)||'Se generará al guardar';}
+ chooseInitialPhoto(event:Event,form:NgForm){const input=event.target as HTMLInputElement;const file=input.files?.[0];input.value='';if(!file)return;if(file.size>20*1024*1024){this.error.set('La fotografía no debe superar 20 MB.');return;}this.clearInitialPhoto();this.initialPhoto.set(file);this.initialPreview.set(URL.createObjectURL(file));form.form.markAsDirty();this.error.set('');}
+ clearInitialPhoto(){if(this.initialPreview())URL.revokeObjectURL(this.initialPreview());this.initialPreview.set('');this.initialPhoto.set(null);this.suggested.set(null);}
+ async suggestFromPhoto(){const file=this.initialPhoto();if(!file||this.suggestionBusy())return;if(!['image/jpeg','image/png','image/webp','image/avif'].includes(file.type)){this.suggestionError.set('Para sugerencias IA, selecciona una imagen JPG, PNG, WebP o AVIF. Puedes guardar esta foto manualmente.');return;}this.suggestionBusy.set(true);this.suggestionError.set('');try{
+  const source=await firstValueFrom(this.http.post<{id:string;uploadUrl:string;contentType:string}>('/api/v1/admin/ai-studio/uploads',{filename:file.name,contentType:file.type,byteSize:file.size,productId:null}));
+  const uploaded=await fetch(source.uploadUrl,{method:'PUT',headers:{'Content-Type':file.type},body:file});if(!uploaded.ok)throw new Error('No se pudo subir la fotografía privada.');
+  await firstValueFrom(this.http.post('/api/v1/admin/ai-studio/uploads/'+source.id+'/complete',{}));
+  this.suggested.set(await firstValueFrom(this.http.post<{name:string;description:string;categoryId:string;color:string}>('/api/v1/admin/ai-studio/uploads/'+source.id+'/suggest-product',{})));
+ }catch(e){this.suggestionError.set('No se pudieron generar sugerencias. Puedes continuar manualmente. '+errorMessage(e));}finally{this.suggestionBusy.set(false);}}
+ acceptSuggestion(field:'name'|'description'|'categoryId'|'color',form:NgForm){const value=this.suggested()?.[field];if(!value)return;if(field==='color')this.draft.variants[0].attributes['color']=value;else if(field==='name')this.draft.name=value;else if(field==='description')this.draft.description=value;else this.draft.categoryId=value;form.form.markAsDirty();this.suggested.update(s=>s?{...s,[field]:''}:s);}
+ private validateDraft(form:NgForm){const missing:string[]=[];if(!this.draft.name.trim())missing.push('Nombre');if(!this.draft.categoryId)missing.push('Categoría');if(!this.draft.variants.length)missing.push('Al menos una variante');this.draft.variants.forEach((v,i)=>{if(!Number.isFinite(Number(v.price))||Number(v.price)<=0)missing.push('Precio de variante '+(i+1));});if(form.invalid&&!missing.length)missing.push('Revisa los campos marcados del formulario');this.missingFields.set(missing);if(missing.length){this.editorTab.set(missing.some(v=>v.startsWith('Precio')||v.includes('variante'))?'variants':'content');const first=missing[0];const target=first==='Nombre'?'input[name="name"]':first==='Categoría'?'select[name="category"]':first.startsWith('Precio')?'input[name="price'+(Number(first.match(/\d+/)?.[0]??'1')-1)+'"]':'input.ng-invalid';setTimeout(()=>document.querySelector<HTMLElement>(target)?.focus());}return !missing.length;}
+ addVariant(form:NgForm){if(this.draft.variants.length>=50)return;this.draft.variants.push({sku:'',attributes:{talla:'',color:''},price:0,enabled:true});form.form.markAsDirty();}
  removeVariant(index:number,form:NgForm){this.draft.variants.splice(index,1);form.form.markAsDirty();}
  private payload():Content{return {...this.draft,imageUrl:this.draft.imageUrl?.trim()||null,collectionIds:this.draft.collectionIds??[],
  variants:this.draft.variants.map(v=>({sku:v.sku.trim(),price:Number(v.price),enabled:v.enabled,attributes:Object.fromEntries(Object.entries(v.attributes).filter(([,value])=>value.trim()).map(([key,value])=>[key,value.trim()]))}))};}
- async save(form:NgForm){if(form.invalid||this.busy())return;await this.run(async()=>{const p=this.selected();const draft=this.payload();
- const result=await firstValueFrom(p?this.http.put<Product>('/api/v1/admin/products/'+p.id+'/draft',{version:p.version,draft}):this.http.post<Product>('/api/v1/admin/products',{slug:this.slug,draft}));
- this.setProduct(result);form.form.markAsPristine();await this.refreshList();this.notice.set('Borrador guardado. Publícalo para mostrar los cambios en la tienda.');});}
+ async save(form:NgForm){if(this.busy()||!this.validateDraft(form))return;await this.run(async()=>{const p=this.selected();const draft=this.payload();
+ const result=await firstValueFrom(p?this.http.put<Product>('/api/v1/admin/products/'+p.id+'/draft',{version:p.version,draft}):this.http.post<Product>('/api/v1/admin/products',{draft}));
+ this.setProduct(result);form.form.markAsPristine();await this.refreshList();if(this.initialPhoto()){try{await this.uploadImage(this.initialPhoto()!,result.id);this.clearInitialPhoto();}catch(e){form.form.markAsDirty();this.error.set('Borrador guardado, pero no se pudo subir la fotografía. Puedes reintentar: '+errorMessage(e));this.editorTab.set('images');return;}finally{this.uploadProgress.set('');}}this.notice.set('Borrador guardado. Publícalo para mostrar los cambios en la tienda.');});}
  async publish(form:NgForm){const p=this.selected();if(!p?.draft||form.dirty||this.busy())return;await this.run(async()=>{this.setProduct(await firstValueFrom(this.http.post<Product>('/api/v1/admin/products/'+p.id+'/publish',{version:p.version})));form.form.markAsPristine();await this.refreshList();this.notice.set('Producto publicado. Ya está disponible en la tienda.');});}
  async archive(form:NgForm){const p=this.selected();if(!p||!this.confirmedArchive()||this.busy())return;await this.run(async()=>{await firstValueFrom(this.http.delete('/api/v1/admin/products/'+p.id,{params:{version:p.version}}));this.setProduct(await firstValueFrom(this.http.get<Product>('/api/v1/admin/products/'+p.id)));form.form.markAsPristine();await this.refreshList();this.notice.set('Producto archivado; dejó de mostrarse en la tienda.');});}
  async createCategory(form:NgForm){if(form.invalid||this.busy())return;await this.run(async()=>{const c=await firstValueFrom(this.http.post<Category>('/api/v1/admin/categories',{name:this.categoryName,slug:this.categorySlug,parentId:this.categoryParent||null,description:this.categoryDescription,displayOrder:0,active:true}));this.categories.update(rows=>[...rows,c]);this.categoryName='';this.categorySlug='';this.categoryParent='';this.categoryDescription='';form.resetForm();this.notice.set('Categoría creada. Ya puedes seleccionarla en el producto.');});}
@@ -57,22 +71,24 @@ export class Products {
   const input=event.target as HTMLInputElement;const file=input.files?.[0];input.value='';
   const product=this.selected();if(!file||!product||this.busy())return;
   if(file.size>20*1024*1024){this.error.set('La imagen original no debe superar 20 MB.');return;}
-  try{await this.run(async()=>{
+  try{await this.run(async()=>this.uploadImage(file,product.id));}finally{this.uploadProgress.set('');}
+ }
+ private async uploadImage(file:File,productId:string){
    this.uploadProgress.set('Preparando imagen…');
    const variants=await this.webpVariants(file);
-   const session=await firstValueFrom(this.http.post<MediaUploadSession>('/api/v1/admin/products/'+product.id+'/media/uploads',{filename:file.name,altText:this.draft.name||null}));
+   const session=await firstValueFrom(this.http.post<MediaUploadSession>('/api/v1/admin/products/'+productId+'/media/uploads',{filename:file.name,altText:this.draft.name||null}));
    for(const target of session.uploads){
     const variant=variants.find(item=>item.variant===target.variant);if(!variant)throw new Error('Falta la variante '+target.variant);
     this.uploadProgress.set('Subiendo '+this.variantLabel(target.variant)+'…');
     const response=await fetch(target.uploadUrl,{method:'PUT',headers:{'Content-Type':'image/webp'},body:variant.blob});
     if(!response.ok)throw new Error('Cloudflare R2 rechazó la carga '+target.variant+' ('+response.status+').');
    }
-   const completed=await firstValueFrom(this.http.post<MediaAsset>('/api/v1/admin/products/'+product.id+'/media/'+session.assetId+'/complete',{
+   const completed=await firstValueFrom(this.http.post<MediaAsset>('/api/v1/admin/products/'+productId+'/media/'+session.assetId+'/complete',{
     objects:variants.map(item=>({variant:item.variant,width:item.width,height:item.height,byteSize:item.blob.size}))
    }));
-   await this.loadMedia(product.id);
+   await this.loadMedia(productId);
    this.notice.set(completed.is_primary?'Imagen optimizada, subida y seleccionada como principal.':'Imagen optimizada y agregada a la galería.');
-  });}finally{this.uploadProgress.set('');}
+   this.uploadProgress.set('');
  }
  selectAiReference(event:Event,role:AiReferenceRole){const input=event.target as HTMLInputElement;const file=input.files?.[0];input.value='';if(!file)return;if(file.size>20*1024*1024){this.error.set('Cada fotografía debe pesar como máximo 20 MB.');return;}if(!['image/jpeg','image/png','image/webp','image/avif'].includes(file.type)){this.error.set('Estudio IA admite JPG, PNG, WebP o AVIF.');return;}const prior=this.aiReferences()[role];if(prior)URL.revokeObjectURL(prior.preview);const value={file,preview:URL.createObjectURL(file)};this.aiReferences.update(rows=>({...rows,[role]:value}));if(role==='FRONT'){if(this.aiOriginalPreview)URL.revokeObjectURL(this.aiOriginalPreview);this.aiOriginalPreview=value.preview;}this.error.set('');}
  removeAiReference(role:AiReferenceRole){const prior=this.aiReferences()[role];if(prior)URL.revokeObjectURL(prior.preview);this.aiReferences.update(rows=>{const next={...rows};delete next[role];return next;});if(role==='FRONT')this.aiOriginalPreview='';}
