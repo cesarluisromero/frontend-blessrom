@@ -17,7 +17,7 @@ interface Entry{id:string;version:number;name?:string;slug?:string;label?:string
 <section><form #form="ngForm" (ngSubmit)="save(form)"><fieldset [disabled]="busy()"><h2>{{selected()?'Editar':'Crear'}} {{singular()}}</h2>
 @if(isOption()){
 <label>Valor interno<input name="value" [(ngModel)]="draft.value" required maxlength="100" [readonly]="!!selected()?.usage?.length"></label><label>Etiqueta<input name="label" [(ngModel)]="draft.label" required maxlength="100"></label>
-@if(kind()==='color'){<label>Color hexadecimal<input name="swatch" [(ngModel)]="draft.swatch" pattern="#[0-9A-Fa-f]{6}" placeholder="#24579B"></label>}
+@if(kind()==='color'){<label>Color hexadecimal<div class="color-picker"><input type="color" name="swatchPicker" [ngModel]="draft.swatch||'#24579B'" (ngModelChange)="draft.swatch=$event" aria-label="Elegir color"><input name="swatch" [(ngModel)]="draft.swatch" pattern="#[0-9A-Fa-f]{6}" placeholder="#24579B"></div></label>}
 } @else {
 <label>Nombre<input name="name" [(ngModel)]="draft.name" required maxlength="100"></label><label>Identificador URL<input name="slug" [(ngModel)]="draft.slug" required pattern="[a-z0-9]+(?:-[a-z0-9]+)*" maxlength="100"></label>
 <label>Descripción<textarea name="description" [(ngModel)]="draft.description" maxlength="500" rows="3"></textarea></label>
