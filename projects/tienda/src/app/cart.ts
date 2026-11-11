@@ -1,7 +1,7 @@
 import { Component, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { CartService } from './cart.service';
-import { errorMessage, money } from '../../../../shared/commerce';
+import { errorMessage, money, safeImage } from '../../../../shared/commerce';
 import { AnalyticsService } from './analytics.service';
 @Component({
   selector: 'app-cart',
@@ -15,6 +15,7 @@ import { AnalyticsService } from './analytics.service';
     @if (cart.cart(); as c) {
       @for (item of c.items; track item.variantId) {
         <article>
+          <div class="cart-thumbnail">@if(safeImage(item.thumbnailUrl);as src){@if(!failedImages().includes(item.variantId)){<img [src]="src" [alt]="item.imageAlt||item.name||item.sku" width="80" height="100" loading="lazy" (error)="failedImages.update(addFailed(item.variantId))">}@else{<span>Sin imagen</span>}}@else{<span>Sin imagen</span>}</div>
           <div>
             <h2>{{ item.name || item.sku }}</h2>
             <p>{{ attrs(item.attributes) }} · {{ money(item.unitPrice || 0) }}</p>
@@ -66,7 +67,7 @@ import { AnalyticsService } from './analytics.service';
       }
       article {
         display: grid;
-        grid-template-columns: 1fr auto auto;
+        grid-template-columns: 80px 1fr auto auto;
         gap: 25px;
         align-items: center;
         background: white;
@@ -74,6 +75,7 @@ import { AnalyticsService } from './analytics.service';
         padding: 20px;
         margin: 15px 0;
       }
+      .cart-thumbnail img{width:80px;height:100px;object-fit:contain}.cart-thumbnail span{font-size:12px;color:#536174}
       .actions {
         display: flex;
         gap: 10px;
@@ -110,6 +112,7 @@ export class CartPage {
   private readonly analytics = inject(AnalyticsService);
   error = signal('');
   readonly money = money;
+  readonly safeImage=safeImage;readonly failedImages=signal<string[]>([]);addFailed(id:string){return (ids:string[])=>[...ids,id];}
   constructor() {
     if (!this.cart.cart())
       void this.cart

@@ -1,5 +1,5 @@
-export interface Category { id:string; name:string; slug:string; parent_id:string|null; description:string; display_order:number; active:boolean; version:number; }
-export interface Collection { id:string; name:string; slug:string; description:string; starts_at:string|null; ends_at:string|null; display_order:number; active:boolean; featured:boolean; cover_image_url:string|null; version:number; }
+export interface Category { selectable?:boolean; id:string; name:string; slug:string; parent_id:string|null; description:string; display_order:number; active:boolean; version:number; }
+export interface Collection { selectable?:boolean; id:string; name:string; slug:string; description:string; starts_at:string|null; ends_at:string|null; display_order:number; active:boolean; featured:boolean; cover_image_url:string|null; version:number; }
 export interface StorefrontCollection extends Collection { products:Product[]; }
 export interface HomeTarget { type:'catalog'|'category'|'collection'|'collections'; id?:string; }
 export interface HomeLink { label:string; target:HomeTarget; }
@@ -18,7 +18,7 @@ export interface HomeCoverPurge {
 export interface HomeCoverRemoval { home: HomeAdmin; purge: HomeCoverPurge; }
 export interface Storefront { featuredCollections:StorefrontCollection[]; home?:StorefrontHome|null; paymentMethods?:string[]; }
 export interface MerchandisingLanding<T extends Category|Collection> { entity:T; products:Page<Product>; }
-export interface AttributeOption { id:string; attribute_id:string; value:string; label:string; swatch:string|null; display_order:number; active:boolean; }
+export interface AttributeOption { selectable?:boolean;version?:number; id:string; attribute_id:string; value:string; label:string; swatch:string|null; display_order:number; active:boolean; }
 export interface AttributeDefinition { id:string; code:string; name:string; type:'TEXT'|'SIZE'|'COLOR'; filterable:boolean; display_order:number; active:boolean; options:AttributeOption[]; }
 export interface Variant { id?:string; sku:string; attributes:Record<string,string>; price:string|number; enabled:boolean; available?:number; }
 export type MediaVariant='original'|'large'|'medium'|'thumbnail';
@@ -28,11 +28,11 @@ export interface AiStudioStatus {enabled:boolean;configured:boolean;manualUpload
 export interface AiStudioResult {id:string;slot:number;revision:number;status:string;stage?:'CUTOUT'|'GHOST';image_approved:boolean;copy_approved:boolean;cutout_approved?:boolean;ghost_approved?:boolean;cutout_revision?:number;ghost_revision?:number;fallbackAllowed?:boolean;feedback?:string|null;content:Record<string,string>;media?:ProductMedia;cutoutMedia?:ProductMedia;desktopMedia?:ProductMedia;mobileMedia?:ProductMedia}
 export interface AiStudioJob {id:string;job_type:string;product_id?:string|null;page_key?:string|null;stage?:'CUTOUT'|'GHOST';status:string;attempts:number;error_code?:string|null;error_message?:string|null;results:AiStudioResult[];created_at:string;updated_at:string}
 export interface Content { name:string; description:string; categoryId:string; imageUrl:string|null; media?:ProductMedia[]; variants:Variant[]; collectionIds?:string[]; }
-export interface Product { id:string; slug:string; version:number; archived:boolean; draft?:Content|null; published?:Content|null; content?:Content; }
+export interface Product { thumbnailUrl?:string|null; imageAlt?:string|null; deleting?:boolean; id:string; slug:string; version:number; archived:boolean; draft?:Content|null; published?:Content|null; content?:Content; }
 export interface FacetOption {value:string;label:string;count:number}
 export interface ProductFacets {colors:FacetOption[];sizes:FacetOption[];price:{min:number|string|null;max:number|string|null}}
 export interface Page<T> { items:T[]; page:number; size:number; total:number; facets?:ProductFacets; }
-export interface CartLine { variantId:string; sku:string; quantity:number; name?:string; attributes?:Record<string,string>; unitPrice?:string; lineTotal?:string; available:boolean; }
+export interface CartLine { productId?:string; thumbnailUrl?:string|null; imageAlt?:string|null; variantId:string; sku:string; quantity:number; name?:string; attributes?:Record<string,string>; unitPrice?:string; lineTotal?:string; available:boolean; }
 export interface Cart { id:string; status:string; expiresAt:string; items:CartLine[]; orderId?:string|null; }
 export interface CartAccess { id:string; accessToken:string; expiresAt:string; }
 export interface ShippingRate { id:string; version:number; department_name:string; province_name:string; district_code:string; district_name:string; amount:string|number; active:boolean; }

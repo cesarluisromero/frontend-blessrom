@@ -47,6 +47,16 @@ describe('Authentication boundary',()=>{
 });
 describe('Order lifecycle',()=>{
  afterEach(()=>TestBed.resetTestingModule());
+ it('opens details while the list loads and ignores a late previous selection',async()=>{
+  TestBed.configureTestingModule({providers:[provideHttpClient(),provideHttpClientTesting()]});
+  const page=TestBed.runInInjectionContext(()=>new Orders());const controller=TestBed.inject(HttpTestingController);
+  const list=controller.expectOne(r=>r.url==='/api/v1/admin/orders');expect(list.request.params.get('size')).toBe('5');
+  const first=page.open('first');const old=controller.expectOne('/api/v1/admin/orders/first');
+  const second=page.open('second');expect(old.cancelled).toBe(true);
+  controller.expectOne('/api/v1/admin/orders/second').flush({id:'second',version:1,items:[],history:[],shipment:null});
+  await Promise.all([first,second]);expect(page.selected()?.id).toBe('second');expect(page.detailLoading()).toBe(false);
+  list.flush({items:[],total:0,page:0,size:5});controller.expectOne('/api/v1/admin/shipping-rates').flush([]);await vi.waitFor(()=>expect(page.busy()).toBe(false));controller.verify();
+ });
  it('sends the current version and the next valid status',async()=>{
   TestBed.configureTestingModule({providers:[provideHttpClient(),provideHttpClientTesting()]});
   const page=TestBed.runInInjectionContext(()=>new Orders());

@@ -1,0 +1,4 @@
+import {Component} from '@angular/core';
+import {RouterLink,RouterLinkActive} from '@angular/router';
+@Component({selector:'app-catalog-nav',imports:[RouterLink,RouterLinkActive],template:`<nav aria-label="Administrar catálogo">@for(item of links;track item.path){<a [routerLink]="item.path" routerLinkActive="active" [routerLinkActiveOptions]="{exact:true}">{{item.label}}</a>}</nav>`,styles:[`nav{display:flex;gap:8px;flex-wrap:wrap;margin:18px 0}a{padding:12px 16px;border:1px solid #c5cfda;border-radius:7px;color:#14243e;text-decoration:none;background:#fff;min-height:44px;box-sizing:border-box}.active{background:#14243e;color:#fff}`]})
+export class CatalogNav{readonly links=[{path:'/productos',label:'Productos'},{path:'/productos/categorias',label:'Categorías'},{path:'/productos/colecciones',label:'Colecciones'},{path:'/productos/tallas',label:'Tallas'},{path:'/productos/colores',label:'Colores'}];}
