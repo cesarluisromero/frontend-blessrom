@@ -10,7 +10,7 @@ interface Entry{id:string;version:number;name?:string;slug?:string;label?:string
 @Component({selector:'app-catalog-editor',imports:[FormsModule,CatalogNav,RouterLink],template:`
 <main><h1>{{title()}}</h1><app-catalog-nav/>
 @if(error()){<p role="alert" class="alert">{{error()}}</p>}@if(notice()){<p role="status">{{notice()}}</p>}
-<div class="layout"><section><form (ngSubmit)="search(form)"><label>Buscar<input name="q" [(ngModel)]="query"></label><button [disabled]="busy()">Buscar</button></form><button type="button" (click)="newEntry(form)" [disabled]="busy()">Crear nuevo</button>
+<div class="layout"><section><form (ngSubmit)="search(form)"><label>Buscar<input name="q" [(ngModel)]="query"></label><button [disabled]="busy()">Buscar</button></form><button class="new-entry" type="button" (click)="newEntry(form)" [disabled]="busy()">Crear nuevo</button>
 @if(loading()){<p role="status">Cargando…</p>}
 @for(item of entries();track item.id){<button class="entry" [class.selected]="selected()?.id===item.id" (click)="open(item.id,form)" [disabled]="busy()"><strong>{{item.name||item.label}}</strong><small>{{item.slug||item.value}} · {{item.selectable?'Admite nuevas selecciones':'Sin nuevas selecciones'}}</small></button>}@empty{@if(!loading()){<p>No hay elementos.</p>}}
 <div class="actions"><button (click)="changePage(-1,form)" [disabled]="page===0||busy()">Anterior</button><span>{{page+1}} · {{total()}} elementos</span><button (click)="changePage(1,form)" [disabled]="(page+1)*5>=total()||busy()">Siguiente</button></div></section>
