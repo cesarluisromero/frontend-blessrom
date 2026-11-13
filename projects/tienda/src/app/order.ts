@@ -89,17 +89,20 @@ interface SavedOrder {
           @if(hasManualPayment()){
           <form #paymentForm="ngForm" (ngSubmit)="submitPayment(paymentForm)">
             <fieldset [disabled]="busy()">
-              <h2>O registrar un pago manual</h2>
-              <label
-                >Método<select name="method" [(ngModel)]="paymentMethod" required>
-                  <option value="" disabled>Selecciona un medio de pago</option>
-                  @if(paymentEnabled('YAPE')){<option value="YAPE">Yape</option>}
-                  @if(paymentEnabled('PLIN')){<option value="PLIN">Plin</option>}
-                  @if(paymentEnabled('BANK_TRANSFER')){<option value="BANK_TRANSFER">Transferencia bancaria</option>}
-                  @if(paymentEnabled('CASH_ON_DELIVERY')){<option value="CASH_ON_DELIVERY">Pago contra entrega</option>}
-                </select></label
-              >
-              @if (paymentMethod !== 'CASH_ON_DELIVERY') {
+              <h2>Pago manual con Yape o Plin</h2>
+              <p>Escanea el QR o envía el importe exacto al número de Blessrom. Antes de confirmar, verifica que aparezca <strong>Blessrom</strong> como destinatario.</p>
+              @if(storefront.data()?.manualPayment; as instructions){
+                <div class="payment-instructions">
+                  <img class="payment-qr" [src]="instructions.qrUrl" alt="Código QR de pago de Blessrom para Yape y Plin" width="240" height="240" />
+                  <p>Número de la tienda: <strong>{{ instructions.phone }}</strong></p>
+                  <p>Nombre que debe aparecer: <strong>{{ instructions.accountName }}</strong></p>
+                </div>
+              }
+              <fieldset class="payment-methods">
+                <legend>¿Con cuál aplicación pagaste?</legend>
+                @if(paymentEnabled('YAPE')){<label class="method-option" [class.chosen]="paymentMethod==='YAPE'"><input type="radio" name="method" [(ngModel)]="paymentMethod" value="YAPE" aria-label="Pagué con Yape" required /><span class="brand yape" aria-hidden="true">Yape</span></label>}
+                @if(paymentEnabled('PLIN')){<label class="method-option" [class.chosen]="paymentMethod==='PLIN'"><input type="radio" name="method" [(ngModel)]="paymentMethod" value="PLIN" aria-label="Pagué con Plin" required /><span class="brand plin" aria-hidden="true">plin</span></label>}
+              </fieldset>
                 <label
                   >Número de operación o referencia<input
                     name="reference"
@@ -114,10 +117,9 @@ interface SavedOrder {
                     (change)="selectProof($event)"
                     required
                 /></label>
-              }
               <button
                 type="submit"
-                [disabled]="paymentForm.invalid || (paymentMethod !== 'CASH_ON_DELIVERY' && !proof)"
+                [disabled]="paymentForm.invalid || !proof || !paymentMethod"
               >
                 Enviar para revisión
               </button>
@@ -174,6 +176,16 @@ interface SavedOrder {
       .online {
         border-color: #1f5aa6;
       }
+      .payment-instructions{margin:18px 0;padding:18px;text-align:center;background:#f5f7fb;border:1px solid var(--line);border-radius:10px}
+      .payment-qr{display:block;max-width:100%;height:auto;margin:0 auto 14px;background:white}
+      .payment-instructions p{display:block;margin:7px 0}
+      .payment-methods{display:flex;flex-wrap:wrap;gap:12px;border:0;padding:0;margin:18px 0}
+      .payment-methods legend{font-weight:600;margin-bottom:8px}
+      .method-option{display:flex;align-items:center;gap:10px;border:1px solid var(--line);border-radius:8px;padding:10px 14px;margin:0;min-height:52px;cursor:pointer}
+      .method-option.chosen{border:2px solid #174a91;background:#f0f5ff}
+      .method-option input{margin:0}
+      .brand{display:inline-flex;align-items:center;justify-content:center;width:46px;height:32px;border-radius:8px;color:white;font-weight:800;font-size:.88rem;letter-spacing:-.05em}
+      .brand.yape{background:#662d91}.brand.plin{background:#00a8bd}
     `,
   ],
 })
@@ -203,7 +215,7 @@ export class OrderPage implements OnDestroy {
   }
   ngOnDestroy(){if(this.polling)clearInterval(this.polling);}
   paymentEnabled(method:string){return this.storefront.data()?.paymentMethods?.includes(method)??false;}
-  hasManualPayment(){return ['YAPE','PLIN','BANK_TRANSFER','CASH_ON_DELIVERY'].some(method=>this.paymentEnabled(method));}
+  hasManualPayment(){return ['YAPE','PLIN'].some(method=>this.paymentEnabled(method))&&!!this.storefront.data()?.manualPayment;}
   private read() {
     try {
       return JSON.parse(
@@ -312,7 +324,7 @@ export class OrderPage implements OnDestroy {
     }
   }
   async submitPayment(form: NgForm) {
-    if (!this.saved || form.invalid || (this.paymentMethod !== 'CASH_ON_DELIVERY' && !this.proof))
+    if (!this.saved || form.invalid || !this.proof || !['YAPE','PLIN'].includes(this.paymentMethod) || !this.paymentEnabled(this.paymentMethod))
       return;
     this.busy.set(true);
     this.error.set('');

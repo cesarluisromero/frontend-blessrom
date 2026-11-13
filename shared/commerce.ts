@@ -16,7 +16,7 @@ export interface HomeCoverPurge {
   errorMessage?: string | null;
 }
 export interface HomeCoverRemoval { home: HomeAdmin; purge: HomeCoverPurge; }
-export interface Storefront { featuredCollections:StorefrontCollection[]; home?:StorefrontHome|null; paymentMethods?:string[]; }
+export interface Storefront { featuredCollections:StorefrontCollection[]; home?:StorefrontHome|null; paymentMethods?:string[]; manualPayment?:{phone:string;qrUrl:string;accountName:string}; }
 export interface MerchandisingLanding<T extends Category|Collection> { entity:T; products:Page<Product>; }
 export interface AttributeOption { selectable?:boolean;version?:number; id:string; attribute_id:string; value:string; label:string; swatch:string|null; display_order:number; active:boolean; }
 export interface AttributeDefinition { id:string; code:string; name:string; type:'TEXT'|'SIZE'|'COLOR'; filterable:boolean; display_order:number; active:boolean; options:AttributeOption[]; }
