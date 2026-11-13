@@ -80,46 +80,49 @@ interface SavedOrder {
         }
         @if (!o.payment || o.payment.status === 'REJECTED') {
           @if(paymentEnabled('MERCADO_PAGO')){<section class="online">
-            <h2>Pago en línea</h2>
+            <div class="online-heading"><h2>Pago en línea</h2><img src="https://cdn.jsdelivr.net/gh/glincker/thesvg@main/public/icons/mercado-pago/default.svg" alt="Logo de Mercado Pago" width="56" height="40" /></div>
             <p>Tarjetas, Yape y medios disponibles en Mercado Pago.</p>
             <button type="button" [disabled]="busy()" (click)="startMercadoPago()">
               Pagar con Mercado Pago
             </button>
           </section>}
           @if(hasManualPayment()){
-          <form #paymentForm="ngForm" (ngSubmit)="submitPayment(paymentForm)">
+          <form #paymentForm="ngForm" (ngSubmit)="submitPayment(paymentForm)" novalidate>
             <fieldset [disabled]="busy()">
               <h2>Pago manual con Yape o Plin</h2>
               <p>Escanea el QR o envía el importe exacto al número de Blessrom. Antes de confirmar, verifica que aparezca <strong>Blessrom</strong> como destinatario.</p>
-              @if(storefront.data()?.manualPayment; as instructions){
                 <div class="payment-instructions">
-                  <img class="payment-qr" [src]="instructions.qrUrl" alt="Código QR de pago de Blessrom para Yape y Plin" width="240" height="240" />
-                  <p>Número de la tienda: <strong>{{ instructions.phone }}</strong></p>
-                  <p>Nombre que debe aparecer: <strong>{{ instructions.accountName }}</strong></p>
+                  <img class="payment-qr" [src]="manualPayment().qrUrl" alt="Código QR de pago de Blessrom para Yape y Plin" width="240" height="240" />
+                  <p>Número de la tienda: <strong>{{ manualPayment().phone }}</strong></p>
+                  <p>Nombre que debe aparecer: <strong>{{ manualPayment().accountName }}</strong></p>
                 </div>
-              }
               <fieldset class="payment-methods">
                 <legend>¿Con cuál aplicación pagaste?</legend>
                 @if(paymentEnabled('YAPE')){<label class="method-option" [class.chosen]="paymentMethod==='YAPE'"><input type="radio" name="method" [(ngModel)]="paymentMethod" value="YAPE" aria-label="Pagué con Yape" required /><span class="brand yape" aria-hidden="true">Yape</span></label>}
                 @if(paymentEnabled('PLIN')){<label class="method-option" [class.chosen]="paymentMethod==='PLIN'"><input type="radio" name="method" [(ngModel)]="paymentMethod" value="PLIN" aria-label="Pagué con Plin" required /><span class="brand plin" aria-hidden="true">plin</span></label>}
               </fieldset>
+              @if(paymentAttempted && !paymentMethod){<small class="field-error" role="alert">Selecciona Yape o Plin.</small>}
                 <label
-                  >Número de operación o referencia<input
+                  >Número de operación o referencia <span class="required-mark" aria-hidden="true">*</span><input
                     name="reference"
                     [(ngModel)]="reference"
+                    #referenceField="ngModel"
+                    [class.invalid]="(referenceField.invalid || !reference.trim()) && (referenceField.touched || paymentAttempted)"
                     maxlength="100"
-                    required /></label
+                    required />@if((referenceField.invalid || !reference.trim()) && (referenceField.touched || paymentAttempted)){<small class="field-error" role="alert">Ingresa el número de operación o referencia.</small>}</label
                 ><label
-                  >Comprobante (JPG, PNG o WebP; máximo 1 MB)<input
+                  >Seleccionar archivo de comprobante <span class="required-mark" aria-hidden="true">*</span><span class="file-help">JPG, PNG o WebP; máximo 1 MB</span><input
                     name="proofFile"
                     type="file"
                     accept="image/jpeg,image/png,image/webp"
                     (change)="selectProof($event)"
+                    (blur)="proofTouched=true"
+                    [class.invalid]="!proof && (proofTouched || paymentAttempted)"
                     required
-                /></label>
+                />@if(!proof && (proofTouched || paymentAttempted)){<small class="field-error" role="alert">Selecciona un archivo de comprobante válido.</small>}</label>
               <button
                 type="submit"
-                [disabled]="paymentForm.invalid || !proof || !paymentMethod"
+                [disabled]="busy()"
               >
                 Enviar para revisión
               </button>
@@ -176,6 +179,13 @@ interface SavedOrder {
       .online {
         border-color: #1f5aa6;
       }
+      .online-heading{display:flex;align-items:center;justify-content:space-between;gap:16px}
+      .online-heading h2{margin:0}
+      .online-heading img{display:block;object-fit:contain;flex:none}
+      .required-mark,.field-error{color:#b42318}
+      .field-error{display:block;margin-top:5px;font-size:.85rem}
+      .file-help{display:block;color:#5a6680;font-size:.85rem}
+      input.invalid{border:2px solid #b42318;background:#fff7f6}
       .payment-instructions{margin:18px 0;padding:18px;text-align:center;background:#f5f7fb;border:1px solid var(--line);border-radius:10px}
       .payment-qr{display:block;max-width:100%;height:auto;margin:0 auto 14px;background:white}
       .payment-instructions p{display:block;margin:7px 0}
@@ -186,6 +196,16 @@ interface SavedOrder {
       .method-option input{margin:0}
       .brand{display:inline-flex;align-items:center;justify-content:center;width:46px;height:32px;border-radius:8px;color:white;font-weight:800;font-size:.88rem;letter-spacing:-.05em}
       .brand.yape{background:#662d91}.brand.plin{background:#00a8bd}
+      @media(max-width:600px){
+        main{padding:24px 4%}
+        section,form{padding:16px;margin:16px 0;min-width:0}
+        form>fieldset{min-width:0;padding:0;border:0;margin:0}
+        .payment-instructions{padding:12px}
+        .payment-qr{width:min(240px,100%)}
+        .payment-methods{min-width:0}
+        input[type=file]{box-sizing:border-box;max-width:100%;width:100%}
+        form button[type=submit]{width:100%;min-height:44px}
+      }
     `,
   ],
 })
@@ -202,6 +222,8 @@ export class OrderPage implements OnDestroy {
   reference = '';
   proof: string | null = null;
   proofType: string | null = null;
+  paymentAttempted = false;
+  proofTouched = false;
   readonly money = money;
   private polling:ReturnType<typeof setInterval>|null=null;
   private readonly trackPurchase = effect(() => {
@@ -215,7 +237,8 @@ export class OrderPage implements OnDestroy {
   }
   ngOnDestroy(){if(this.polling)clearInterval(this.polling);}
   paymentEnabled(method:string){return this.storefront.data()?.paymentMethods?.includes(method)??false;}
-  hasManualPayment(){return ['YAPE','PLIN'].some(method=>this.paymentEnabled(method))&&!!this.storefront.data()?.manualPayment;}
+  hasManualPayment(){return ['YAPE','PLIN'].some(method=>this.paymentEnabled(method));}
+  manualPayment(){return this.storefront.data()?.manualPayment ?? {phone:'926940715',qrUrl:'/qr-blessrom.png',accountName:'Blessrom'};}
   private read() {
     try {
       return JSON.parse(
@@ -301,6 +324,7 @@ export class OrderPage implements OnDestroy {
     }
   }
   selectProof(event: Event) {
+    this.proofTouched = true;
     const file = (event.target as HTMLInputElement).files?.[0];
     this.proof = null;
     this.proofType = null;
@@ -324,8 +348,11 @@ export class OrderPage implements OnDestroy {
     }
   }
   async submitPayment(form: NgForm) {
-    if (!this.saved || form.invalid || !this.proof || !['YAPE','PLIN'].includes(this.paymentMethod) || !this.paymentEnabled(this.paymentMethod))
+    this.paymentAttempted = true;
+    if (!this.saved || form.invalid || !this.reference.trim() || !this.proof || !['YAPE','PLIN'].includes(this.paymentMethod) || !this.paymentEnabled(this.paymentMethod)) {
+      form.control.markAllAsTouched();
       return;
+    }
     this.busy.set(true);
     this.error.set('');
     try {
