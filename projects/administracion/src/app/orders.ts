@@ -6,7 +6,7 @@ import {HttpClient} from '@angular/common/http';
 import {firstValueFrom,Subject,takeUntil} from 'rxjs';
 import {ActivatedRoute,Router,RouterLink} from '@angular/router';
 import {Order,Page,ReturnCase,ShippingRate,errorMessage,money} from '../../../../shared/commerce';
-interface OrderSummary {id:string;orderNumber?:string;version:number;status:string;currency:string;total:string;created_at:string;reservation_expires_at:string;payment_status?:string}
+interface OrderSummary {id:string;orderNumber?:string;version:number;status:string;currency:string;total:string;created_at:string;reservation_expires_at:string;payment_status?:string;recipient?:string;itemSummary?:string}
 interface ReturnSummary {id:string;order_id:string;orderNumber?:string;status:string;reason:string;created_at:string}
 @Component({selector:'app-orders',imports:[FormsModule,DatePipe,RouterLink],templateUrl:'./orders.html',styleUrl:'./products.scss'})
 export class Orders {
