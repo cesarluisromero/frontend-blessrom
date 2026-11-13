@@ -22,35 +22,45 @@ import { AnalyticsService } from './analytics.service';
       <form #form="ngForm" (ngSubmit)="confirm(form)">
         <fieldset [disabled]="busy()">
           <label
-            >Nombre de quien recibe<input
+            >Nombre de quien recibe <span class="required-mark">*</span><input
               name="recipient"
               [(ngModel)]="recipient"
+              #recipientField="ngModel"
+              [class.invalid]="recipientField.invalid && (recipientField.touched || validationAttempted)"
               maxlength="150"
               required
-          /></label>
+          />@if (recipientField.invalid && (recipientField.touched || validationAttempted)) { <small class="field-error">Ingresa el nombre de quien recibe.</small> }</label>
           <label
-            >Correo electrónico<input
+            >Correo electrónico <span class="required-mark">*</span><input
               name="email"
               [(ngModel)]="email"
+              #emailField="ngModel"
+              [class.invalid]="emailField.invalid && (emailField.touched || validationAttempted)"
               type="email"
+              email
               maxlength="254"
               required
-          /></label>
+          />@if (emailField.invalid && (emailField.touched || validationAttempted)) { <small class="field-error">{{ emailField.errors?.['email'] ? 'Ingresa un correo electrónico válido.' : 'Ingresa tu correo electrónico.' }}</small> }</label>
           <label
-            >Teléfono<input name="phone" [(ngModel)]="phone" pattern="[0-9+ ()-]{7,30}" required
-          /></label>
+            >Teléfono <span class="required-mark">*</span><input name="phone" [(ngModel)]="phone" #phoneField="ngModel" [class.invalid]="phoneField.invalid && (phoneField.touched || validationAttempted)" pattern="[0-9+ ()-]{7,30}" required
+          />@if (phoneField.invalid && (phoneField.touched || validationAttempted)) { <small class="field-error">{{ phoneField.errors?.['pattern'] ? 'Ingresa un teléfono válido.' : 'Ingresa tu teléfono.' }}</small> }</label>
           <label
-            >Dirección completa<textarea
+            >Dirección completa <span class="required-mark">*</span><textarea
               name="address"
               [(ngModel)]="address"
+              #addressField="ngModel"
+              [class.invalid]="addressField.invalid && (addressField.touched || validationAttempted)"
               maxlength="500"
               required
             ></textarea>
+            @if (addressField.invalid && (addressField.touched || validationAttempted)) { <small class="field-error">Ingresa la dirección completa.</small> }
           </label>
           <label
-            >Departamento<select
+            >Departamento <span class="required-mark">*</span><select
               name="department"
               [(ngModel)]="department"
+              #departmentField="ngModel"
+              [class.invalid]="departmentField.invalid && (departmentField.touched || validationAttempted)"
               (ngModelChange)="selectDepartment()"
               required
             >
@@ -58,12 +68,14 @@ import { AnalyticsService } from './analytics.service';
               @for (name of departments(); track name) {
                 <option [value]="name">{{ name }}</option>
               }
-            </select></label
+            </select>@if (departmentField.invalid && (departmentField.touched || validationAttempted)) { <small class="field-error">Selecciona un departamento.</small> }</label
           >
           <label
-            >Provincia<select
+            >Provincia <span class="required-mark">*</span><select
               name="province"
               [(ngModel)]="province"
+              #provinceField="ngModel"
+              [class.invalid]="provinceField.invalid && (provinceField.touched || validationAttempted)"
               (ngModelChange)="selectProvince()"
               required
             >
@@ -71,12 +83,14 @@ import { AnalyticsService } from './analytics.service';
               @for (name of provinces(); track name) {
                 <option [value]="name">{{ name }}</option>
               }
-            </select></label
+            </select>@if (provinceField.invalid && (provinceField.touched || validationAttempted)) { <small class="field-error">Selecciona una provincia.</small> }</label
           >
           <label
-            >Distrito<select
+            >Distrito <span class="required-mark">*</span><select
               name="district"
               [(ngModel)]="district"
+              #districtField="ngModel"
+              [class.invalid]="districtField.invalid && (districtField.touched || validationAttempted)"
               (ngModelChange)="invalidateQuote()"
               required
             >
@@ -86,18 +100,24 @@ import { AnalyticsService } from './analytics.service';
                   {{ r.district_name }} · {{ money(r.amount) }}
                 </option>
               }
-            </select></label
+            </select>@if (districtField.invalid && (districtField.touched || validationAttempted)) { <small class="field-error">Selecciona un distrito.</small> }</label
           >
+          <label class="check coupon-toggle"><input type="checkbox" name="useCoupon" [(ngModel)]="useCoupon" (ngModelChange)="toggleCoupon()" />Tengo un cupón</label>
+          @if (useCoupon) {
           <label
-            >Cupón (opcional)<input
+            >Cupón <span class="required-mark">*</span><input
               name="coupon"
               [(ngModel)]="coupon"
+              #couponField="ngModel"
+              [class.invalid]="couponField.invalid && (couponField.touched || validationAttempted)"
               (ngModelChange)="invalidateQuote()"
               maxlength="30"
               placeholder="Ej. BIENVENIDA10"
-          /></label>
-          <button type="button" class="secondary" [disabled]="!district" (click)="calculate()">
-            Aplicar cupón y calcular total
+              required
+          />@if (couponField.invalid && (couponField.touched || validationAttempted)) { <small class="field-error">Ingresa el código del cupón.</small> }</label>
+          }
+          <button type="button" class="calculate-button" (click)="calculate(form)">
+            {{ useCoupon ? 'Aplicar cupón y calcular total' : 'Calcular total' }}
           </button>
           @if (quote; as q) {
             <section>
@@ -162,6 +182,8 @@ export class Checkout {
   province = '';
   district = '';
   coupon = '';
+  useCoupon = false;
+  validationAttempted = false;
   confirmed = false;
   readonly money = money;
   constructor() {
@@ -197,6 +219,10 @@ export class Checkout {
     this.quote = null;
     this.confirmed = false;
   }
+  toggleCoupon() {
+    if (!this.useCoupon) this.coupon = '';
+    this.invalidateQuote();
+  }
   selectDepartment() {
     this.province = '';
     this.district = '';
@@ -229,11 +255,17 @@ export class Checkout {
       /* La compra invitada sigue disponible si el perfil no se puede cargar. */
     }
   }
-  async calculate() {
+  async calculate(form: NgForm) {
+    this.validationAttempted = true;
+    if (form.invalid || (this.useCoupon && !this.coupon.trim())) {
+      form.control.markAllAsTouched();
+      this.error.set('Completa los campos marcados en rojo para calcular el total.');
+      return;
+    }
     this.busy.set(true);
     this.error.set('');
     try {
-      this.quote = await this.cart.quote(this.district, this.coupon);
+      this.quote = await this.cart.quote(this.district, this.useCoupon ? this.coupon.trim() : '');
       this.analytics.beginCheckout(
         this.cart.cart()?.items ?? [],
         Number(this.quote.total),
@@ -246,7 +278,11 @@ export class Checkout {
     }
   }
   async confirm(form: NgForm) {
-    if (form.invalid || !this.quote || !this.confirmed) return;
+    this.validationAttempted = true;
+    if (form.invalid || !this.quote || !this.confirmed) {
+      form.control.markAllAsTouched();
+      return;
+    }
     this.busy.set(true);
     this.error.set('');
     try {
