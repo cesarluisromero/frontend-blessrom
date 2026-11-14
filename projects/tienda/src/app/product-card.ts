@@ -23,11 +23,29 @@ export function mediaSrcset(media?: ProductMedia | null): string | null {
 export class ProductCard {
   @Input({ required: true }) product!: Product;
   @Input() horizontal = false;
-  media() { return this.product.content?.media?.find(item => item.is_primary) ?? this.product.content?.media?.[0]; }
-  image() { return safeImage(this.media()?.urls.medium ?? this.product.content?.imageUrl); }
+  stockVariants() { return this.product.content?.variants.filter(item => item.enabled && (item.available ?? 0) > 0) ?? []; }
+  colorKey() { return Object.keys(this.stockVariants()[0]?.attributes ?? {}).find(item => item.toLowerCase() === 'color'); }
+  featuredVariant() {
+    const variants = this.stockVariants();
+    const key = this.colorKey();
+    const assigned = this.product.content?.media?.filter(item => item.color_value) ?? [];
+    return variants.find(variant => key && assigned.some(item => item.color_value?.toLowerCase() === variant.attributes[key]?.toLowerCase())) ?? variants[0];
+  }
+  media(): ProductMedia | undefined {
+    const media = this.product.content?.media ?? [];
+    const assigned = media.filter(item => item.color_value);
+    if (assigned.length) {
+      const key = this.colorKey();
+      const color = key ? this.featuredVariant()?.attributes[key] : null;
+      const matching = assigned.filter(item => item.color_value?.toLowerCase() === color?.toLowerCase());
+      return matching.find(item => item.is_primary) ?? matching[0];
+    }
+    return media.find(item => item.is_primary) ?? media[0];
+  }
+  image() { return safeImage(this.media()?.urls.medium ?? (this.product.content?.media?.some(item => item.color_value) ? null : this.product.content?.imageUrl)); }
   srcset() { return mediaSrcset(this.media()); }
-  price() { const prices = this.product.content?.variants.filter(item => item.enabled).map(item => Number(item.price)) ?? []; return money(prices.length ? Math.min(...prices) : 0); }
-  colors() { const variants = this.product.content?.variants.filter(item => item.enabled) ?? []; const key = Object.keys(variants[0]?.attributes ?? {}).find(item => item.toLowerCase() === 'color'); return key ? [...new Set(variants.map(item => item.attributes[key]).filter(Boolean))] : []; }
+  price() { const prices = this.stockVariants().map(item => Number(item.price)); return money(prices.length ? Math.min(...prices) : 0); }
+  colors() { const variants = this.stockVariants(); const key = this.colorKey(); return key ? [...new Set(variants.map(item => item.attributes[key]).filter(Boolean))] : []; }
   colorStyle(value:string) { return fallbackSwatch(value); }
 }
 
