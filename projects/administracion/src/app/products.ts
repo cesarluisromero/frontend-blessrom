@@ -20,6 +20,9 @@ export class Products {
  private appliedFilters={query:'',status:'',category:''};
  private captureFilters(){this.appliedFilters={query:this.query.trim(),status:this.statusFilter,category:this.categoryFilter};}
  readonly editorTab=signal<'content'|'variants'|'images'|'publication'>('content');
+ readonly workflowSteps=[{key:'content',label:'Contenido'},{key:'variants',label:'Variantes'},{key:'images',label:'Imágenes'},{key:'publication',label:'Publicación'}] as const;
+ workflowState(step:'content'|'variants'|'images'|'publication',dirty:boolean|null):'complete'|'partial'|'empty'{if(step==='content'){const name=!!this.draft.name.trim(),category=!!this.draft.categoryId;return name&&category?'complete':name||category?'partial':'empty';}if(step==='variants'){const variants=this.draft.variants;if(!variants.length)return 'empty';const filled=(v:Content['variants'][number])=>Number(v.price)>0&&!!v.attributes['talla']?.trim()&&!!v.attributes['color']?.trim();if(variants.every(filled))return 'complete';return variants.some(v=>Number(v.price)>0||!!v.attributes['talla']?.trim()||!!v.attributes['color']?.trim())?'partial':'empty';}if(step==='images')return this.media().length||this.draft.imageUrl?.trim()?'complete':this.initialPhoto()?'partial':'empty';const product=this.selected();return product?.published&&!product.draft&&!dirty?'complete':product?'partial':'empty';}
+ workflowLabel(state:'complete'|'partial'|'empty'){return state==='complete'?'Completo':state==='partial'?'Por completar':'Sin datos';}
  readonly items=signal<Product[]>([]);readonly categories=signal<Category[]>([]);readonly collections=signal<Collection[]>([]);readonly attributes=signal<AttributeDefinition[]>([]);
  readonly selected=signal<Product|null>(null);readonly busy=signal(false);readonly error=signal('');readonly notice=signal('');
  readonly total=signal(0);page=0;readonly size=12;
