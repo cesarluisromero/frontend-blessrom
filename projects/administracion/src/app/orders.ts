@@ -1,4 +1,4 @@
-import {Component,DestroyRef,computed,inject,signal} from '@angular/core';
+import {Component,DestroyRef,ElementRef,ViewChild,computed,inject,signal} from '@angular/core';
 import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
 import {DatePipe} from '@angular/common';
 import {FormsModule,NgForm} from '@angular/forms';
@@ -10,11 +10,13 @@ interface OrderSummary {id:string;orderNumber?:string;version:number;status:stri
 interface ReturnSummary {id:string;order_id:string;orderNumber?:string;status:string;reason:string;created_at:string}
 @Component({selector:'app-orders',imports:[FormsModule,DatePipe,RouterLink],templateUrl:'./orders.html',styleUrl:'./products.scss'})
 export class Orders {
+ @ViewChild('orderTrack') private orderTrack?:ElementRef<HTMLElement>;
  private detailAbort=new Subject<void>();readonly detailId=signal<string|null>(null);readonly detailError=signal('');readonly orderPageSize=5;readonly detailLoading=signal(false);private detailSequence=0;private ordersSequence=0;private returnsSequence=0;private destroy=inject(DestroyRef);
  private http=inject(HttpClient);private route=inject(ActivatedRoute,{optional:true});private router=inject(Router,{optional:true});orders=signal<OrderSummary[]>([]);returns=signal<ReturnSummary[]>([]);returnTotal=signal(0);rates=signal<ShippingRate[]>([]);selected=signal<Order|null>(null);readonly activeOrder=computed(()=>this.selected()?.id===this.detailId()?this.selected():null);busy=signal(false);error=signal('');notice=signal('');total=signal(0);page=0;returnPage=0;pendingReturnPage=0;
  tab:'orders'|'pending'|'delivery'|'returns'|'rates'='orders';q='';filterStatus='';paymentStatusFilter='';paymentMethodFilter='';from='';to='';returnStatusFilter='';paymentException=false;
  readonly showPurchase=signal(true);
  readonly flowSteps=['Pago','Preparación','Listo para enviar','Enviado','Entregado'];
+ scrollOrders(direction:-1|1){const track=this.orderTrack?.nativeElement;if(!track)return;const card=track.querySelector<HTMLElement>('.product');track.scrollBy({left:direction*((card?.offsetWidth??280)+12),behavior:'smooth'});}
  departmentName='';provinceName='';districtCode='';districtName='';amount:number|null=null;active=true;editing:ShippingRate|null=null;readonly money=money;
  shipmentCarrier='';trackingNumber='';estimatedDelivery='';shipmentNotes='';shipmentVersion=0;
  returnNote='';returnReference='';returnRestock=false;
