@@ -8,10 +8,15 @@ import { Category, Collection, AttributeDefinition, Content, Product, Page, Prod
 @Component({selector:'app-products',imports:[FormsModule,RouterLink,CatalogNav],templateUrl:'./products.html',styleUrls:['./products.scss','./products-gallery.scss']})
 export class Products {
  @ViewChild('productTrack') private productTrack?:ElementRef<HTMLElement>;
+ @ViewChild('filterTrigger') private filterTrigger?:ElementRef<HTMLButtonElement>;
+ @ViewChild('filterQuery') private filterQuery?:ElementRef<HTMLInputElement>;
  scrollProducts(direction:-1|1){const track=this.productTrack?.nativeElement;if(!track)return;const card=track.querySelector<HTMLElement>('.product');track.scrollBy({left:direction*((card?.offsetWidth??280)+12),behavior:'smooth'});}
  private readonly destroy=inject(DestroyRef);readonly safeImage=safeImage;readonly imageErrors=signal<string[]>([]);readonly purges=signal<HomeCoverPurge[]>([]);private purgeTimers=new Map<string,ReturnType<typeof setTimeout>>();
  private readonly http=inject(HttpClient);
  private readonly route=inject(ActivatedRoute,{optional:true});private readonly router=inject(Router,{optional:true});query='';statusFilter='';categoryFilter='';
+ readonly filterOpen=signal(false);
+ openFilters(){this.filterOpen.set(true);setTimeout(()=>this.filterQuery?.nativeElement.focus());}
+ closeFilters(restore=true){if(restore){this.query=this.appliedFilters.query;this.statusFilter=this.appliedFilters.status;this.categoryFilter=this.appliedFilters.category;}this.filterOpen.set(false);setTimeout(()=>this.filterTrigger?.nativeElement.focus());}
  private appliedFilters={query:'',status:'',category:''};
  private captureFilters(){this.appliedFilters={query:this.query.trim(),status:this.statusFilter,category:this.categoryFilter};}
  readonly editorTab=signal<'content'|'variants'|'images'|'publication'>('content');
@@ -31,7 +36,7 @@ export class Products {
  private blank():Content{return {name:'',description:'',categoryId:'',imageUrl:null,collectionIds:[],variants:[{sku:'',price:0,enabled:true,attributes:{talla:'',color:''}}]};}
  private async run(action:()=>Promise<void>){if(this.busy())return;this.busy.set(true);this.error.set('');this.notice.set('');try{await action();}catch(e){this.error.set(errorMessage(e));}finally{this.busy.set(false);}}
  private async refreshList(){const {query,status,category}=this.appliedFilters;const params:Record<string,string|number>={page:this.page,size:this.size};if(query)params['q']=query;if(status)params['status']=status;if(this.categories().some(c=>c.id===category)){params['category']=category;params['includeSubcategories']='false';}const data=await firstValueFrom(this.http.get<Page<Product>>('/api/v1/admin/products',{params}));this.items.set(data.items);this.total.set(data.total);}
- async filter(){if(this.busy())return;this.captureFilters();this.page=0;this.router?.navigate([],{relativeTo:this.route??undefined,queryParams:{q:this.query||null,status:this.statusFilter||null,category:this.categoryFilter||null},queryParamsHandling:'merge'});await this.run(()=>this.refreshList());}
+ async filter(){if(this.busy())return;this.captureFilters();this.closeFilters(false);this.page=0;this.router?.navigate([],{relativeTo:this.route??undefined,queryParams:{q:this.query||null,status:this.statusFilter||null,category:this.categoryFilter||null},queryParamsHandling:'merge'});await this.run(()=>this.refreshList());}
  async load(){await this.run(async()=>{const [categories,collections,attributes]=await Promise.all([
   firstValueFrom(this.http.get<Category[]>('/api/v1/admin/categories')),firstValueFrom(this.http.get<Collection[]>('/api/v1/admin/collections')),firstValueFrom(this.http.get<AttributeDefinition[]>('/api/v1/admin/attributes'))]);
   this.categories.set(categories);this.collections.set(collections);this.attributes.set(attributes);await this.refreshList();});}
