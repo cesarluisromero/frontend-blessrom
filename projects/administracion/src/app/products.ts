@@ -1,4 +1,4 @@
-import { Component, DestroyRef, computed, inject, signal } from '@angular/core';
+import { Component, DestroyRef, ElementRef, ViewChild, computed, inject, signal } from '@angular/core';
 import { FormsModule, NgForm } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
@@ -7,6 +7,8 @@ import {CatalogNav} from './catalog-nav';
 import { Category, Collection, AttributeDefinition, Content, Product, Page, ProductMedia, MediaVariant, AiStudioJob, AiStudioResult, AiStudioStatus, errorMessage, money, safeImage, HomeCoverPurge } from '../../../../shared/commerce';
 @Component({selector:'app-products',imports:[FormsModule,RouterLink,CatalogNav],templateUrl:'./products.html',styleUrls:['./products.scss','./products-gallery.scss']})
 export class Products {
+ @ViewChild('productTrack') private productTrack?:ElementRef<HTMLElement>;
+ scrollProducts(direction:-1|1){const track=this.productTrack?.nativeElement;if(!track)return;const card=track.querySelector<HTMLElement>('.product');track.scrollBy({left:direction*((card?.offsetWidth??280)+12),behavior:'smooth'});}
  private readonly destroy=inject(DestroyRef);readonly safeImage=safeImage;readonly imageErrors=signal<string[]>([]);readonly purges=signal<HomeCoverPurge[]>([]);private purgeTimers=new Map<string,ReturnType<typeof setTimeout>>();
  private readonly http=inject(HttpClient);
  private readonly route=inject(ActivatedRoute,{optional:true});private readonly router=inject(Router,{optional:true});query='';statusFilter='';categoryFilter='';
