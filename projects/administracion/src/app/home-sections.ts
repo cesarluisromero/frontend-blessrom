@@ -9,12 +9,13 @@ import { HomeProductSection, HomeSectionsAdmin } from '../../../../shared/home-s
 <main class="editor"><p class="eyebrow">INICIO / SECCIONES</p><h1>Secciones de productos</h1>
 <p>Agrupa prendas por categoría, colección o ventas. Las secciones sin productos disponibles se ocultan automáticamente.</p>
 @if(error()){<p role="alert" class="error">{{error()}}</p>}@if(notice()){<p role="status" class="notice">{{notice()}}</p>}
+@if(!categories().length||!collections().length){<button type="button" class="secondary" (click)="loadOptions()">Reintentar carga de categorías y colecciones</button>}
 <div class="toolbar"><button type="button" (click)="add()" [disabled]="sections.length>=8">Agregar sección</button><span>{{sections.length}} / 8 secciones</span></div>
 @for(section of sections;track section.id;let i=$index){<section>
 <div class="heading"><h2>Sección {{i+1}}</h2><div><button type="button" class="secondary" (click)="move(i,-1)" [disabled]="i===0" [attr.aria-label]="'Subir sección '+(i+1)">↑</button><button type="button" class="secondary" (click)="move(i,1)" [disabled]="i===sections.length-1" [attr.aria-label]="'Bajar sección '+(i+1)">↓</button><button type="button" class="secondary" (click)="remove(i)">Quitar</button></div></div>
 <div class="fields"><label>Título<input [(ngModel)]="section.title" (ngModelChange)="saved.set(false)" maxlength="100" placeholder="Por ejemplo: Shorts para tu día"></label>
 <label>Agrupar por<select [(ngModel)]="section.kind" (ngModelChange)="section.sourceId=null;saved.set(false)"><option value="CATEGORY">Categoría</option><option value="COLLECTION">Colección</option><option value="BEST_SELLERS">Más vendidos</option></select></label>
-@if(section.kind==='CATEGORY'){<label>Categoría<select [(ngModel)]="section.sourceId" (ngModelChange)="saved.set(false)"><option [ngValue]="null">Selecciona una categoría</option>@for(category of categories();track category.id){<option [ngValue]="category.id">{{category.name}}</option>}</select></label>}
+@if(section.kind==='CATEGORY'){<label>Categoría<select [(ngModel)]="section.sourceId" (ngModelChange)="saved.set(false)"><option [ngValue]="null">{{categories().length?'Selecciona una categoría':'Cargando categorías…'}}</option>@for(category of categories();track category.id){<option [ngValue]="category.id">{{category.name}}</option>}</select></label>}
 @if(section.kind==='COLLECTION'){<label>Colección<select [(ngModel)]="section.sourceId" (ngModelChange)="saved.set(false)"><option [ngValue]="null">Selecciona una colección</option>@for(collection of collections();track collection.id){<option [ngValue]="collection.id">{{collection.name}}</option>}</select></label>}
 <label>Cantidad de productos<input type="number" min="1" max="12" [(ngModel)]="section.limit" (ngModelChange)="saved.set(false)"></label>
 <label class="check"><input type="checkbox" [(ngModel)]="section.enabled" (ngModelChange)="saved.set(false)"> Mostrar sección</label></div></section>}
@@ -26,7 +27,17 @@ export class HomeSectionsEditor {
  readonly busy=signal(false);readonly saved=signal(false);readonly error=signal('');readonly notice=signal('');
  sections:HomeProductSection[]=[];version=0;
  constructor(){void this.load();}
- async load(){try{const [data,categories,collections]=await Promise.all([firstValueFrom(this.http.get<HomeSectionsAdmin>('/api/v1/home-sections/admin')),firstValueFrom(this.http.get<Category[]>('/api/v1/admin/categories')),firstValueFrom(this.http.get<Collection[]>('/api/v1/admin/collections'))]);this.version=data.version;this.sections=structuredClone(data.draft);this.categories.set(categories);this.collections.set(collections);this.saved.set(true);}catch{this.error.set('No se pudieron cargar las secciones.');}}
+ async load(){void this.loadOptions();try{const data=await firstValueFrom(this.http.get<HomeSectionsAdmin>('/api/v1/home-sections/admin'));this.version=data.version;this.sections=structuredClone(data.draft);this.saved.set(true);}catch(e){this.error.set((e as {status?:number}).status===404?'El backend de secciones aún no está disponible. Despliega el backend con la migración V28.':'No se pudieron cargar las secciones.');}}
+ async loadOptions(){
+  const [categories,collections]=await Promise.allSettled([
+   firstValueFrom(this.http.get<Category[]>('/api/v1/admin/categories')),
+   firstValueFrom(this.http.get<Collection[]>('/api/v1/admin/collections'))
+  ]);
+  if(categories.status==='fulfilled')this.categories.set(categories.value);
+  else this.error.set('No se pudieron cargar las categorías. Revisa la conexión con el backend.');
+  if(collections.status==='fulfilled')this.collections.set(collections.value);
+  else if(categories.status==='fulfilled')this.error.set('No se pudieron cargar las colecciones. Revisa la conexión con el backend.');
+ }
  add(){if(this.sections.length>=8)return;this.sections.push({id:crypto.randomUUID(),title:'',kind:'CATEGORY',sourceId:null,limit:6,enabled:true});this.saved.set(false);}
  remove(index:number){this.sections.splice(index,1);this.saved.set(false);}
  move(index:number,direction:number){const next=index+direction;if(next<0||next>=this.sections.length)return;[this.sections[index],this.sections[next]]=[this.sections[next],this.sections[index]];this.saved.set(false);}
