@@ -7,8 +7,9 @@ import { SeoService } from './seo.service';
 import { StorefrontService } from './storefront.service';
 import { ProductCard } from './product-card';
 import { PublishedHomeSection } from '../../../../shared/home-sections';
+import { HomeProductSectionComponent } from './home-product-section';
 
-@Component({ selector: 'app-home', imports: [RouterLink, HomeHero, ProductCard], template: `
+@Component({ selector: 'app-home', imports: [RouterLink, HomeHero, ProductCard, HomeProductSectionComponent], template: `
 <main>
   @if(heroSlides().length){<app-home-hero [slides]="heroSlides()" [categories]="storefront.categories()" [collections]="storefront.collections()" />}
   <div class="benefits" aria-label="Comprar en Blessrom"><span><b aria-hidden="true">S/</b> Precios en soles</span><span><b aria-hidden="true">↗</b> Consulta cobertura de envío</span><span><b aria-hidden="true">♙</b> Compra como invitado</span></div>
@@ -18,7 +19,7 @@ import { PublishedHomeSection } from '../../../../shared/home-sections';
     <div class="favorites-grid">@for(product of products();track product.id){<app-product-card [product]="product" [horizontal]="true" />}</div>
     @if(!loading()&&!error()&&!products().length){<p>Estamos preparando nuevas prendas para ti. Vuelve pronto.</p>}
   </section>
-  @for(section of sections();track section.id){<section class="favorites custom-section"><div class="section-heading"><h2>{{section.title}}</h2><a routerLink="/catalogo">Ver catálogo ↗</a></div><div class="favorites-grid">@for(product of section.products;track product.id){<app-product-card [product]="product" [horizontal]="true" />}</div></section>}
+  @for(section of sections();track section.id){<app-home-product-section [section]="section" />}
   @if(featured().length){<section id="colecciones" class="featured"><div class="section-heading"><div><p class="eyebrow">Edición Blessrom</p><h2>Colecciones para tu día a día</h2></div></div><div class="collections-grid">
     @for(collection of featured();track collection.id){<a class="collection" [routerLink]="['/coleccion',collection.slug]">@if(cover(collection);as url){<img [src]="url" [alt]="collection.name" loading="lazy" width="640" height="480">}<div><h3>{{collection.name}}</h3><p>{{collection.description}}</p><span>Explorar colección ↗</span></div></a>}
   </div></section>}
