@@ -12,6 +12,7 @@ export const routes:Routes=[
  {path:'inventario',canActivate:[adminGuard],loadComponent:()=>import('./inventory').then(m=>m.Inventory),title:'Inventario | Blessrom'},
  {path:'promociones',canActivate:[adminGuard],loadComponent:()=>import('./promotions').then(m=>m.Promotions),title:'Promociones | Blessrom'},
  {path:'contenido',canActivate:[adminGuard],loadComponent:()=>import('./site-information').then(m=>m.SiteInformationEditor),title:'Contenido del sitio | Blessrom'},
+ {path:'inicio/secciones',canActivate:[adminGuard],loadComponent:()=>import('./home-sections').then(m=>m.HomeSectionsEditor),title:'Secciones del inicio | Blessrom'},
  {path:'pedidos',canActivate:[adminGuard],loadComponent:()=>import('./orders').then(m=>m.Orders),title:'Pedidos y envíos | Blessrom'},
  {path:'pedidos/:id',canActivate:[adminGuard],loadComponent:()=>import('./orders').then(m=>m.Orders),title:'Detalle de pedido | Blessrom'},
  {path:'**',redirectTo:''}
