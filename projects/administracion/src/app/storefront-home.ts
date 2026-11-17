@@ -63,7 +63,7 @@ const PURGE_STORAGE_KEY = 'blessrom-home-cover-purge';
  @if(view()==='draft'){@if(selectedSlide();as slide){
   <div class="selected-heading"><h2>Diapositiva {{selectedIndex()+1}}</h2><label class="toggle"><input type="checkbox" name="enabled" [(ngModel)]="slide.enabled"> Visible al publicar</label></div>
   <label>Frase superior<input name="eyebrow" [(ngModel)]="slide.eyebrow" maxlength="100"></label>
-  <label>Título principal<input name="title" [(ngModel)]="slide.title" maxlength="180" required></label>
+  <label>Título principal (opcional)<input name="title" [(ngModel)]="slide.title" maxlength="180"></label>
   <label>Descripción<textarea name="description" [(ngModel)]="slide.description" maxlength="1000" rows="4"></textarea></label>
   <h2>Imágenes de portada</h2><p>Sube una imagen por dispositivo. Puedes ajustar el recorte antes de guardar cada archivo.</p>
   @for(current of [slide]; track current){
@@ -74,8 +74,8 @@ const PURGE_STORAGE_KEY = 'blessrom-home-cover-purge';
   }
   <label>Texto alternativo<input name="heroAlt" [(ngModel)]="slide.heroAlt" maxlength="300" [required]="!!slide.heroAssetId||!!slide.mobileAssetId"></label>
   <h2>Acciones de la diapositiva</h2>
-  <div class="action"><label>Botón principal<input name="primaryLabel" [(ngModel)]="slide.primary.label" required maxlength="80"></label><label>Destino<select name="primaryType" [(ngModel)]="slide.primary.target.type" (ngModelChange)="slide.primary.target.id=undefined"><option value="catalog">Catálogo</option><option value="collections">Colecciones</option><option value="category">Categoría</option><option value="collection">Colección</option></select></label><ng-container *ngTemplateOutlet="target;context:{link:slide.primary,key:'primary'}"></ng-container></div>
-  @if(slide.secondary;as secondary){<div class="action"><label>Botón secundario<input name="secondaryLabel" [(ngModel)]="secondary.label" required maxlength="80"></label><label>Destino<select name="secondaryType" [(ngModel)]="secondary.target.type" (ngModelChange)="secondary.target.id=undefined"><option value="catalog">Catálogo</option><option value="collections">Colecciones</option><option value="category">Categoría</option><option value="collection">Colección</option></select></label><ng-container *ngTemplateOutlet="target;context:{link:secondary,key:'secondary'}"></ng-container><button type="button" class="subtle" (click)="slide.secondary=null;markChanged()">Quitar botón</button></div>}@else{<button type="button" class="subtle" (click)="slide.secondary=newLink();markChanged()">Agregar botón secundario</button>}
+  <div class="action"><label>Botón principal (opcional)<input name="primaryLabel" [(ngModel)]="slide.primary.label" maxlength="80"></label><label>Destino<select name="primaryType" [(ngModel)]="slide.primary.target.type" (ngModelChange)="slide.primary.target.id=undefined"><option value="catalog">Catálogo</option><option value="collections">Colecciones</option><option value="category">Categoría</option><option value="collection">Colección</option></select></label><ng-container *ngTemplateOutlet="target;context:{link:slide.primary,key:'primary'}"></ng-container></div>
+  @if(slide.secondary;as secondary){<div class="action"><label>Botón secundario (opcional)<input name="secondaryLabel" [(ngModel)]="secondary.label" maxlength="80"></label><label>Destino<select name="secondaryType" [(ngModel)]="secondary.target.type" (ngModelChange)="secondary.target.id=undefined"><option value="catalog">Catálogo</option><option value="collections">Colecciones</option><option value="category">Categoría</option><option value="collection">Colección</option></select></label><ng-container *ngTemplateOutlet="target;context:{link:secondary,key:'secondary'}"></ng-container><button type="button" class="subtle" (click)="slide.secondary=null;markChanged()">Quitar botón</button></div>}@else{<button type="button" class="subtle" (click)="slide.secondary=newLink();markChanged()">Agregar botón secundario</button>}
   <div class="slide-tools"><button type="button" class="subtle" (click)="duplicateSlide()" [disabled]="slides.length>=6">Duplicar diapositiva</button><button type="button" class="danger" (click)="deleteSlide()" [disabled]="!canRemoveDraftSlide(slide)">Quitar del borrador</button></div>
   @if(!canRemoveDraftSlide(slide)){<p class="hint">Conserva al menos una diapositiva visible. Puedes sustituir sus imágenes.</p>}
  }
@@ -94,7 +94,7 @@ const PURGE_STORAGE_KEY = 'blessrom-home-cover-purge';
 </div>
 </form>
 }
-<ng-template #target let-link="link" let-key="key">@if(link.target.type==='category'){<label>Categoría<select [name]="key+'Id'" [(ngModel)]="link.target.id" required><option [ngValue]="undefined">Selecciona</option>@for(c of categories();track c.id){@if(c.active){<option [value]="c.id">{{c.name}}</option>}}</select></label>}@if(link.target.type==='collection'){<label>Colección<select [name]="key+'Id'" [(ngModel)]="link.target.id" required><option [ngValue]="undefined">Selecciona</option>@for(c of collections();track c.id){@if(c.active){<option [value]="c.id">{{c.name}}</option>}}</select></label>}</ng-template>
+<ng-template #target let-link="link" let-key="key">@if(link.target.type==='category'){<label>Categoría<select [name]="key+'Id'" [(ngModel)]="link.target.id" [required]="!!link.label.trim()"><option [ngValue]="undefined">Selecciona</option>@for(c of categories();track c.id){@if(c.active){<option [value]="c.id">{{c.name}}</option>}}</select></label>}@if(link.target.type==='collection'){<label>Colección<select [name]="key+'Id'" [(ngModel)]="link.target.id" [required]="!!link.label.trim()"><option [ngValue]="undefined">Selecciona</option>@for(c of collections();track c.id){@if(c.active){<option [value]="c.id">{{c.name}}</option>}}</select></label>}</ng-template>
 </section>`,styleUrls:['./storefront-home.scss']})
 export class StorefrontHomeEditor {
  private http=inject(HttpClient);readonly data=signal<HomeAdmin|null>(null);readonly categories=signal<Category[]>([]);readonly collections=signal<Collection[]>([]);readonly busy=signal(false);readonly error=signal('');readonly notice=signal('');readonly conflict=signal(false);readonly device=signal<'desktop'|'mobile'>('desktop');readonly selectedIndex=signal(0);readonly changed=signal(false);readonly aiStatus=signal<AiStudioStatus|null>(null);readonly aiJobs=signal<AiStudioJob[]>([]);readonly eligibleMedia=signal<{assetId:string;altText:string;media:ProductMedia}[]>([]);readonly aiGenerating=signal(false);readonly aiProgress=signal('');readonly selectedAiResults=signal<string[]>([]);aiSelectionMode:'SMART'|'MANUAL'='SMART';aiSourceIds:string[]=[];aiBrief='';aiFeedback:Record<string,string>={};private pollingJob='';
@@ -193,14 +193,14 @@ export class StorefrontHomeEditor {
  async load(){this.busy.set(true);try{const [home,categories,collections,status]=await Promise.all([firstValueFrom(this.http.get<HomeAdmin>('/api/v1/admin/storefront/home')),firstValueFrom(this.http.get<Category[]>('/api/v1/admin/categories')),firstValueFrom(this.http.get<Collection[]>('/api/v1/admin/collections')),firstValueFrom(this.http.get<AiStudioStatus>('/api/v1/admin/ai-studio/status'))]);this.data.set(home);this.publishedIndex.set(0);this.view.set(!home.draft&&home.publishedSlides?.length?'published':'draft');this.categories.set(categories);this.collections.set(collections);this.aiStatus.set(status);this.content=structuredClone(home.draft??home.published??DEFAULT_HOME);this.slides=structuredClone(this.content.slides?.length?this.content.slides:[this.legacySlide(this.content)]);this.selectedIndex.set(0);this.uploadedMedia.clear();this.changed.set(false);if(status.enabled){const [eligible,jobs]=await Promise.all([firstValueFrom(this.http.get<{assetId:string;altText:string;media:ProductMedia}[]>('/api/v1/admin/ai-studio/eligible-media')),firstValueFrom(this.http.get<AiStudioJob[]>('/api/v1/admin/ai-studio/home/jobs'))]);this.eligibleMedia.set(eligible);this.aiJobs.set(jobs);}}catch(e){this.error.set(errorMessage(e));}finally{this.busy.set(false);}}
  async reload(){const local=structuredClone(this.slides);await this.load();this.slides=local;this.conflict.set(false);this.changed.set(true);this.notice.set('Versión del servidor consultada. Tus cambios locales siguen aquí para conciliarlos.');}
  private invalidSlide(){
-  const validLink=(link:HomeLink)=>!!link.label.trim()&&
+  const validLink=(link:HomeLink)=>!link.label.trim()||
    (link.target.type==='category'?this.categories().some(c=>c.active&&c.id===link.target.id):
     link.target.type==='collection'?this.collections().some(c=>c.active&&c.id===link.target.id):true);
-  return this.slides.findIndex(slide=>!slide.title.trim()||
+  return this.slides.findIndex(slide=>
    ((slide.heroAssetId||slide.mobileAssetId)&&!slide.heroAlt.trim())||
    !validLink(slide.primary)||(slide.secondary&&!validLink(slide.secondary)));
  }
- async save(form:NgForm){const current=this.data();if(!current||this.busy())return;const invalid=this.invalidSlide();if(invalid>=0){this.selectDraft(invalid);this.error.set('Revisa el título, el texto alternativo y los enlaces de la diapositiva '+(invalid+1)+'.');return;}this.busy.set(true);this.error.set('');try{const saved=await firstValueFrom(this.http.put<HomeAdmin>('/api/v1/admin/storefront/home/draft',{version:current.version,content:this.slidePayloads()}));this.data.set(saved);this.conflict.set(false);this.changed.set(false);form.form.markAsPristine();this.notice.set('Borrador del slider guardado. La tienda todavía muestra la versión publicada.');}catch(e){this.conflict.set((e as {status?:number}).status===409);this.error.set(errorMessage(e));}finally{this.busy.set(false);}}
+ async save(form:NgForm){const current=this.data();if(!current||this.busy())return;const invalid=this.invalidSlide();if(invalid>=0){this.selectDraft(invalid);this.error.set('Revisa el texto alternativo y los destinos de los botones visibles de la diapositiva '+(invalid+1)+'.');return;}this.busy.set(true);this.error.set('');try{const saved=await firstValueFrom(this.http.put<HomeAdmin>('/api/v1/admin/storefront/home/draft',{version:current.version,content:this.slidePayloads()}));this.data.set(saved);this.conflict.set(false);this.changed.set(false);form.form.markAsPristine();this.notice.set('Borrador del slider guardado. La tienda todavía muestra la versión publicada.');}catch(e){this.conflict.set((e as {status?:number}).status===409);this.error.set(errorMessage(e));}finally{this.busy.set(false);}}
  async publish(form: NgForm) {
   const current = this.data();
   if (!current?.draft || this.busy() || form.dirty || this.changed() || this.conflict() || !this.canPublish()) return;
@@ -344,7 +344,7 @@ export class StorefrontHomeEditor {
    }));
    if (role === 'DESKTOP') slide.heroAssetId = media.id;
    else slide.mobileAssetId = media.id;
-   if (!slide.heroAlt) slide.heroAlt = slide.title;
+   if (!slide.heroAlt) slide.heroAlt = slide.title || 'Portada de Blessrom';
    this.uploadedMedia.set(media.id, media);
    this.markChanged();
    this.notice.set('Imagen cargada. Guarda el borrador para asociarla a la diapositiva.');

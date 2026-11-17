@@ -8,6 +8,7 @@ import { CartService } from './cart.service';
 import { Category, Collection, money, safeImage } from '../../../../shared/commerce';
 import { AnalyticsService } from './analytics.service';
 import { StorefrontService } from './storefront.service';
+import { SiteInformation } from '../../../../shared/site-information';
 type ChatMessage = { role: 'user' | 'assistant'; content: string; products?: AssistantProduct[] };
 type AssistantProduct = {
   id: string;
@@ -27,6 +28,7 @@ type SearchSuggestionsResponse = { items: SearchSuggestion[] };
   styleUrl: './app.scss',
 })
 export class App {
+  readonly siteInformation = signal<SiteInformation | null>(null);
   readonly chatOpen = signal(false);
   readonly menuOpen = signal(false);
   readonly storefront = inject(StorefrontService);
@@ -59,6 +61,7 @@ export class App {
   private readonly suggestionInput = new Subject<string>();
 
   constructor() {
+    this.http.get<SiteInformation>('/api/v1/site-information').subscribe({next: content => this.siteInformation.set(content)});
     this.suggestionInput.pipe(debounceTime(300), distinctUntilChanged(), switchMap(query => {
       if (query.length < 2) return of<SearchSuggestionsResponse>({ items: [] });
       this.suggestionsLoading.set(true);

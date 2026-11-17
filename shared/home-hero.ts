@@ -54,17 +54,17 @@ export interface HomeSlide {
             </div>
           }
         </div>
-        <div class="shade"></div>
+        @if (hasVisibleCopy(slide)) { <div class="shade"></div> }
         @if (slides.length > 1 && !preview) {
           <button type="button" class="nav-arrow previous" (click)="previous()" aria-label="Diapositiva anterior">‹</button>
           <button type="button" class="nav-arrow next" (click)="next()" aria-label="Diapositiva siguiente">›</button>
         }
-        <div class="hero-copy" aria-live="polite">
-          <p class="hero-eyebrow">{{ slide.content.eyebrow }}</p>
-          <h1>{{ slide.content.title }}</h1>
-          <p class="hero-description">{{ slide.content.description }}</p>
-          <div class="hero-actions">
-            @if (link(slide.content.primary); as primary) {
+        @if (hasVisibleCopy(slide)) { <div class="hero-copy" aria-live="polite">
+          @if (slide.content.eyebrow?.trim()) { <p class="hero-eyebrow">{{ slide.content.eyebrow }}</p> }
+          @if (slide.content.title?.trim()) { <h1>{{ slide.content.title }}</h1> }
+          @if (slide.content.description?.trim()) { <p class="hero-description">{{ slide.content.description }}</p> }
+          @if (slide.content.primary?.label?.trim() || slide.content.secondary?.label?.trim()) { <div class="hero-actions">
+            @if (slide.content.primary?.label?.trim() && link(slide.content.primary); as primary) {
               @if (preview) { <span class="hero-primary">{{ slide.content.primary.label }}</span> }
               @else {
                 <a class="hero-primary" [routerLink]="primary.path" [fragment]="primary.fragment">
@@ -72,14 +72,14 @@ export interface HomeSlide {
                 </a>
               }
             }
-            @if (slide.content.secondary; as secondary) {
+            @if (slide.content.secondary?.label?.trim() && slide.content.secondary; as secondary) {
               @if (link(secondary); as target) {
                 @if (preview) { <span class="hero-secondary">{{ secondary.label }}</span> }
                 @else { <a class="hero-secondary" [routerLink]="target.path" [fragment]="target.fragment">{{ secondary.label }} →</a> }
               }
             }
-          </div>
-        </div>
+          </div> }
+        </div> }
         @if (slides.length > 1 && !preview) {
           <div class="slider-controls" aria-label="Controles del carrusel">
             <span>{{ index() + 1 | number:'2.0-0' }} / {{ slides.length | number:'2.0-0' }}</span>
@@ -99,7 +99,7 @@ export interface HomeSlide {
       <nav class="slide-tabs" aria-label="Secciones destacadas">
         @for (slide of slides; track $index) {
           <button type="button" [class.active]="$index === index()" (click)="go($index)">
-            {{ slide.label || slide.content.eyebrow }}
+            {{ slide.label || slide.content.eyebrow || 'Portada ' + ($index + 1) }}
           </button>
         }
       </nav>
@@ -107,6 +107,11 @@ export interface HomeSlide {
   `,
 })
 export class HomeHero implements OnInit, OnDestroy {
+  hasVisibleCopy(slide: HomeSlide): boolean {
+    const content = slide.content;
+    return !!(content.eyebrow?.trim() || content.title?.trim() || content.description?.trim()
+      || content.primary?.label?.trim() || content.secondary?.label?.trim());
+  }
   @Input() content: HomeContent = DEFAULT_HOME;
   @Input() media: ProductMedia | null | undefined = null;
   @Input() categories: Category[] = [];
