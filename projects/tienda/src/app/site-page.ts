@@ -23,7 +23,7 @@ export class SitePageComponent {
       const contact = this.route.snapshot.data['contact'] === true;
       if (!contact && !SITE_PAGE_KEYS.includes(key)) { this.error.set('Página no encontrada.'); return; }
       try { const info = await firstValueFrom(this.http.get<SiteInformation>('/api/v1/site-information'));
-        const page = contact ? {title:'Contacto',body:[info.address,...info.phones].filter(Boolean).join('\n')} : info.pages[key];
+        const page = contact ? {title:'Contacto',body:[info.contactBody?.trim(),info.address,...info.phones].filter(Boolean).join('\n\n')} : info.pages[key];
         this.page.set(page); document.title = `${page.title} | Blessrom`;
       } catch { this.error.set('No se pudo cargar la página.'); }
     });
