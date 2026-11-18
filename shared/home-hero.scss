@@ -47,7 +47,7 @@
 .front { background: #264e6b; left: -30%; top: 65%; }
 .shade {
   pointer-events: none;
-  background: linear-gradient(90deg, #07182ff0 0%, #07182fc2 33%, #07182f29 63%, #07182f08 100%);
+  background: linear-gradient(90deg, rgb(var(--overlay-rgb) / var(--overlay-alpha)) 0%, rgb(var(--overlay-rgb) / 0) var(--overlay-coverage));
 }
 .hero-copy {
   position: relative;
@@ -95,7 +95,7 @@
 @mixin mobile-layout {
   .hero-image { aspect-ratio: 4 / 5; }
   .hero-image .backdrop { display: none; }
-  .shade { background: linear-gradient(180deg, #07182f0a 0%, #07182f26 40%, #07182fe8 72%, #07182ffb 100%); }
+  .shade { background: linear-gradient(0deg, rgb(var(--overlay-rgb) / var(--overlay-alpha)) 0%, rgb(var(--overlay-rgb) / 0) var(--overlay-coverage)); }
   .hero-copy {
     align-self: end;
     align-items: center;

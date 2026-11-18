@@ -74,6 +74,8 @@ const PURGE_STORAGE_KEY = 'blessrom-home-cover-purge';
     </div>
   }
   <label>Texto alternativo<input name="heroAlt" [(ngModel)]="slide.heroAlt" maxlength="300" [required]="!!slide.heroAssetId||!!slide.mobileAssetId"></label>
+  <h2>Capa de color</h2><label class="toggle"><input type="checkbox" name="overlayEnabled" [ngModel]="slide.overlayEnabled!==false" (ngModelChange)="slide.overlayEnabled=$event;markChanged()"> Mostrar degradado sobre la imagen</label>
+  @if(slide.overlayEnabled!==false){<div class="overlay-settings"><label>Color<input type="color" name="overlayColor" [ngModel]="slide.overlayColor||'#07182f'" (ngModelChange)="slide.overlayColor=$event;markChanged()"></label><label>Intensidad: {{slide.overlayOpacity??95}} %<input type="range" name="overlayOpacity" min="0" max="100" step="5" [ngModel]="slide.overlayOpacity??95" (ngModelChange)="slide.overlayOpacity=+$event;markChanged()"></label><label>Alcance: {{slide.overlayCoverage??75}} %<input type="range" name="overlayCoverage" min="20" max="100" step="5" [ngModel]="slide.overlayCoverage??75" (ngModelChange)="slide.overlayCoverage=+$event;markChanged()"></label></div>}
   <h2>Acciones de la diapositiva</h2>
   <div class="action"><label>Botón principal (opcional)<input name="primaryLabel" [(ngModel)]="slide.primary.label" maxlength="80"></label><label>Destino<select name="primaryType" [(ngModel)]="slide.primary.target.type" (ngModelChange)="slide.primary.target.id=undefined"><option value="catalog">Catálogo</option><option value="collections">Colecciones</option><option value="category">Categoría</option><option value="collection">Colección</option></select></label><ng-container *ngTemplateOutlet="target;context:{link:slide.primary,key:'primary'}"></ng-container></div>
   @if(slide.secondary;as secondary){<div class="action"><label>Botón secundario (opcional)<input name="secondaryLabel" [(ngModel)]="secondary.label" maxlength="80"></label><label>Destino<select name="secondaryType" [(ngModel)]="secondary.target.type" (ngModelChange)="secondary.target.id=undefined"><option value="catalog">Catálogo</option><option value="collections">Colecciones</option><option value="category">Categoría</option><option value="collection">Colección</option></select></label><ng-container *ngTemplateOutlet="target;context:{link:secondary,key:'secondary'}"></ng-container><button type="button" class="subtle" (click)="slide.secondary=null;markChanged()">Quitar botón</button></div>}@else{<button type="button" class="subtle" (click)="slide.secondary=newLink();markChanged()">Agregar botón secundario</button>}
@@ -125,7 +127,7 @@ export class StorefrontHomeEditor {
   if (this.purgeId) this.resumePurge();
  }
  newLink():HomeLink{return {label:'',target:{type:'catalog'}};}
- newSlide():HomeSlideContent{return {...structuredClone(DEFAULT_HOME),enabled:true};}
+ newSlide():HomeSlideContent{return {...structuredClone(DEFAULT_HOME),enabled:true,overlayEnabled:true,overlayColor:'#07182f',overlayOpacity:95,overlayCoverage:75};}
  selectedSlide(){return this.slides[this.selectedIndex()]??this.slides[0];}
  markChanged(){this.changed.set(true);}
  private legacySlide(content:HomeContent):HomeSlideContent{return {eyebrow:content.eyebrow,title:content.title,description:content.description,heroAssetId:content.heroAssetId,mobileAssetId:content.mobileAssetId??null,heroAlt:content.heroAlt,frameX:content.frameX,frameY:content.frameY,primary:structuredClone(content.primary),secondary:structuredClone(content.secondary),enabled:true};}

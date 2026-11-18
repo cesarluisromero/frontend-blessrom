@@ -55,7 +55,7 @@ export interface HomeSlide {
             </div>
           }
         </div>
-        @if (hasVisibleCopy(slide)) { <div class="shade"></div> }
+        @if (hasVisibleCopy(slide) && slide.content.overlayEnabled !== false) { <div class="shade" [style.--overlay-rgb]="overlayRgb(slide)" [style.--overlay-alpha]="overlayAlpha(slide)" [style.--overlay-coverage]="overlayCoverage(slide)"></div> }
         @if (slides.length > 1 && !preview) {
           <button type="button" class="nav-arrow previous" (click)="previous()" aria-label="Diapositiva anterior">‹</button>
           <button type="button" class="nav-arrow next" (click)="next()" aria-label="Diapositiva siguiente">›</button>
@@ -95,6 +95,12 @@ export class HomeHero implements OnInit, OnDestroy {
     return !!(content.eyebrow?.trim() || content.title?.trim() || content.description?.trim()
       || content.primary?.label?.trim() || content.secondary?.label?.trim());
   }
+  overlayRgb(slide: HomeSlide): string {
+    const hex = /^#[0-9a-f]{6}$/i.test(slide.content.overlayColor ?? '') ? slide.content.overlayColor! : '#07182f';
+    return [1,3,5].map(offset => parseInt(hex.slice(offset,offset+2),16)).join(' ');
+  }
+  overlayAlpha(slide: HomeSlide): number { return Math.max(0,Math.min(100,slide.content.overlayOpacity ?? 95))/100; }
+  overlayCoverage(slide: HomeSlide): string { return Math.max(20,Math.min(100,slide.content.overlayCoverage ?? 75))+'%'; }
   @Input() content: HomeContent = DEFAULT_HOME;
   @Input() media: ProductMedia | null | undefined = null;
   @Input() categories: Category[] = [];
