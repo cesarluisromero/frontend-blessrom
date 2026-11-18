@@ -33,6 +33,7 @@ export class App {
   readonly siteInformation = signal<SiteInformation | null>(null);
   readonly chatOpen = signal(false);
   readonly menuOpen = signal(false);
+  readonly expandedCategories = signal<ReadonlySet<string>>(new Set());
   readonly storefront = inject(StorefrontService);
   readonly categories = this.storefront.categories;
   readonly categoryTree = computed<CategoryNode[]>(() => {
@@ -74,6 +75,23 @@ export class App {
   private readonly destroyRef = inject(DestroyRef);
   private readonly suggestionInput = new Subject<string>();
 
+  toggleCategory(id:string) {
+    this.expandedCategories.update(current => {
+      const next = new Set(current);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  }
+
+  openDesktopMenu(menu:HTMLDetailsElement) {
+    if (!matchMedia('(hover: hover) and (min-width: 601px)').matches) return;
+    menu.open = true;
+  }
+
+  closeDesktopMenu(menu:HTMLDetailsElement) {
+    if (matchMedia('(hover: hover) and (min-width: 601px)').matches) menu.open = false;
+  }
+
   constructor() {
     this.http.get<SiteInformation>('/api/v1/site-information').subscribe({next: content => this.siteInformation.set(content)});
     this.suggestionInput.pipe(debounceTime(300), distinctUntilChanged(), switchMap(query => {
@@ -88,6 +106,7 @@ export class App {
     });
     this.router.events.pipe(filter(event => event instanceof NavigationEnd)).subscribe(() => {
       this.menuOpen.set(false);
+      this.expandedCategories.set(new Set());
       this.chatOpen.set(false);
       this.transactional.set(/^\/(carrito|checkout|pedido)(\/|$)/.test(this.router.url));
       this.searchTerm = this.router.parseUrl(this.router.url).queryParams['q'] ?? '';
