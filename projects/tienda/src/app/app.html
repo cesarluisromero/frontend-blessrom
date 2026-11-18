@@ -42,12 +42,20 @@
       <details name="storefront-navigation" #categoryMenu>
         <summary>Categorías</summary>
         <div class="nav-panel">
-          @for (category of categories(); track category.id) {
-            <a [routerLink]="['/categoria', category.slug]" (click)="categoryMenu.open = false; menuOpen.set(false)">{{
-              category.name
-            }}</a>
-          }
+          <ng-container [ngTemplateOutlet]="categoryNodes" [ngTemplateOutletContext]="{$implicit: categoryTree()}" />
         </div>
+        <ng-template #categoryNodes let-nodes>
+          @for (node of nodes; track node.category.id) {
+            <div class="category-group">
+              <a [routerLink]="['/categoria', node.category.slug]" (click)="categoryMenu.open = false; menuOpen.set(false)">{{node.category.name}}</a>
+              @if (node.children.length) {
+                <div class="category-children">
+                  <ng-container [ngTemplateOutlet]="categoryNodes" [ngTemplateOutletContext]="{$implicit: node.children}" />
+                </div>
+              }
+            </div>
+          }
+        </ng-template>
       </details>
     }
     @if (collections().length) {

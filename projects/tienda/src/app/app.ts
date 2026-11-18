@@ -1,4 +1,5 @@
-import { Component, DestroyRef, signal, inject } from '@angular/core';
+import { Component, DestroyRef, computed, signal, inject } from '@angular/core';
+import { NgTemplateOutlet } from '@angular/common';
 import { NavigationEnd, Router, RouterLink, RouterOutlet } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
@@ -21,9 +22,10 @@ type AssistantProduct = {
 type AssistantResponse = { reply: string; products: AssistantProduct[]; poweredByAi: boolean };
 type SearchSuggestion = { id: string; name: string; thumbnailUrl?: string | null; imageAlt?: string | null };
 type SearchSuggestionsResponse = { items: SearchSuggestion[] };
+type CategoryNode = { category: Category; children: CategoryNode[] };
 @Component({
   selector: 'app-root',
-  imports: [RouterLink, RouterOutlet, FormsModule],
+  imports: [RouterLink, RouterOutlet, FormsModule, NgTemplateOutlet],
   templateUrl: './app.html',
   styleUrl: './app.scss',
 })
@@ -33,6 +35,18 @@ export class App {
   readonly menuOpen = signal(false);
   readonly storefront = inject(StorefrontService);
   readonly categories = this.storefront.categories;
+  readonly categoryTree = computed<CategoryNode[]>(() => {
+    const categories = this.categories();
+    const byId = new Map(categories.map(category => [category.id, {category, children: [] as CategoryNode[]}]));
+    const roots: CategoryNode[] = [];
+    for (const category of categories) {
+      const node = byId.get(category.id)!;
+      const parent = category.parent_id ? byId.get(category.parent_id) : undefined;
+      if (parent && parent !== node) parent.children.push(node);
+      else roots.push(node);
+    }
+    return roots;
+  });
   readonly collections = this.storefront.collections;
   readonly transactional = signal(false);
   readonly chatBusy = signal(false);
