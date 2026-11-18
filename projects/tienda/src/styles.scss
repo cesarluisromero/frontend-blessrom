@@ -1,2 +1,4 @@
 @use '../../../shared/theme';
-html, body { max-width: 100%; overflow-x: clip; }
+@media (max-width: 650px) {
+  html, body { max-width: 100%; overflow-x: clip; }
+}
