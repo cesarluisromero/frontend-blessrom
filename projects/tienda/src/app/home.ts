@@ -11,7 +11,7 @@ import { HomeProductSectionComponent } from './home-product-section';
 
 @Component({ selector: 'app-home', imports: [RouterLink, HomeHero, ProductCard, HomeProductSectionComponent], template: `
 <main>
-  @if(heroSlides().length){<app-home-hero [slides]="heroSlides()" [categories]="storefront.categories()" [collections]="storefront.collections()" />}
+  @if(heroSlides().length){<app-home-hero [slides]="heroSlides()" [categories]="storefront.categories()" [collections]="storefront.collections()" [slideIntervalSeconds]="storefront.data()?.home?.content?.slideIntervalSeconds ?? 6" [slideTransition]="storefront.data()?.home?.content?.slideTransition ?? 'FADE'" />}
   <div class="benefits" aria-label="Comprar en Blessrom"><span><b aria-hidden="true">S/</b> Precios en soles</span><span><b aria-hidden="true">↗</b> Consulta cobertura de envío</span><span><b aria-hidden="true">♙</b> Compra como invitado</span></div>
   <section class="favorites"><div class="section-heading"><h2>Encuentra tu próximo favorito</h2><a routerLink="/catalogo">Ver todo el catálogo ↗</a></div>
     @if(loading()){<p role="status">Preparando el catálogo…</p>}

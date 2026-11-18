@@ -1,7 +1,6 @@
-import { DecimalPipe } from '@angular/common';
 import { Component, Input, OnDestroy, OnInit, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { Category, Collection, HomeContent, HomeLink, HomeSlideContent, ProductMedia, safeImage } from './commerce';
+import { Category, Collection, HomeContent, HomeLink, HomeSlideContent, HomeSlideTransition, ProductMedia, safeImage } from './commerce';
 import { isFixedHomeCover } from './home-cover';
 
 export const DEFAULT_HOME: HomeContent = {
@@ -15,6 +14,8 @@ export const DEFAULT_HOME: HomeContent = {
   primary: { label: 'Explorar catálogo', target: { type: 'catalog' } },
   secondary: { label: 'Ver colecciones', target: { type: 'collections' } },
   shortcuts: [],
+  slideIntervalSeconds: 6,
+  slideTransition: 'FADE',
 };
 
 export interface HomeSlide {
@@ -26,11 +27,11 @@ export interface HomeSlide {
 
 @Component({
   selector: 'app-home-hero',
-  imports: [RouterLink, DecimalPipe],
+  imports: [RouterLink],
   styleUrl: './home-hero.scss',
   template: `
     @if (current(); as slide) {
-      <section class="home-slider" [class.preview]="preview" [class.mobile-preview]="preview && forceMobile"
+      <section class="home-slider" [class.preview]="preview" [class.mobile-preview]="preview && forceMobile" [class]="transitionClass()"
         (mouseenter)="pauseOnHover=true" (mouseleave)="pauseOnHover=false"
         (focusin)="pauseOnHover=true" (focusout)="pauseOnHover=false"
         (touchstart)="startSwipe($event)" (touchend)="endSwipe($event)"
@@ -81,28 +82,10 @@ export interface HomeSlide {
           </div> }
         </div> }
         @if (slides.length > 1 && !preview) {
-          <div class="slider-controls" aria-label="Controles del carrusel">
-            <span>{{ index() + 1 | number:'2.0-0' }} / {{ slides.length | number:'2.0-0' }}</span>
-            <div class="progress" aria-label="Diapositivas">
-              @for (item of slides; track $index) {
-                <button type="button" [class.active]="$index === index()" (click)="go($index)"
-                  [attr.aria-label]="'Ir a ' + ($index + 1)" [attr.aria-current]="$index === index() ? 'true' : null"></button>
-              }
-            </div>
-            <button type="button" class="pause" (click)="togglePause()"
-              [attr.aria-label]="paused ? 'Reanudar carrusel' : 'Pausar carrusel'">{{ paused ? '▶ Reanudar' : 'Ⅱ Pausar' }}</button>
-          </div>
+          <button type="button" class="pause-accessible" (click)="togglePause()"
+            [attr.aria-label]="paused ? 'Reanudar carrusel' : 'Pausar carrusel'">{{ paused ? 'Reanudar carrusel' : 'Pausar carrusel' }}</button>
         }
       </section>
-    }
-    @if (slides.length > 1 && !preview) {
-      <nav class="slide-tabs" aria-label="Secciones destacadas">
-        @for (slide of slides; track $index) {
-          <button type="button" [class.active]="$index === index()" (click)="go($index)">
-            {{ slide.label || slide.content.eyebrow || 'Portada ' + ($index + 1) }}
-          </button>
-        }
-      </nav>
     }
   `,
 })
@@ -119,8 +102,11 @@ export class HomeHero implements OnInit, OnDestroy {
   @Input() preview = false;
   @Input() forceMobile = false;
   @Input() slides: HomeSlide[] = [];
+  @Input() slideIntervalSeconds = 6;
+  @Input() slideTransition: HomeSlideTransition = 'FADE';
 
   readonly index = signal(0);
+  readonly transitionStep = signal(0);
   readonly image = safeImage;
   paused = false;
   pauseOnHover = false;
@@ -130,14 +116,16 @@ export class HomeHero implements OnInit, OnDestroy {
   ngOnInit() {
     const reduce = typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
     if (this.preview || this.slides.length <= 1 || reduce) return;
+    const seconds = Number.isInteger(this.slideIntervalSeconds) && this.slideIntervalSeconds >= 3 && this.slideIntervalSeconds <= 30 ? this.slideIntervalSeconds : 6;
     this.timer = setInterval(() => {
-      if (!this.paused && !this.pauseOnHover) this.next();
-    }, 6000);
+      if (!this.paused && !this.pauseOnHover && !document.hidden) this.next();
+    }, seconds * 1000);
   }
 
   ngOnDestroy() { if (this.timer !== undefined) clearInterval(this.timer); }
   current(): HomeSlide { return this.slides[this.index()] ?? this.slides[0] ?? { content: this.content, media: this.media ?? null }; }
-  go(index: number) { this.index.set(Math.max(0, Math.min(index, this.slides.length - 1))); }
+  go(index: number) { const next=Math.max(0,Math.min(index,this.slides.length-1));if(next!==this.index()){this.index.set(next);this.transitionStep.update(step=>step+1);} }
+  transitionClass() { return this.preview || !this.transitionStep() ? '' : 'transition-'+this.slideTransition.toLowerCase()+'-'+this.transitionStep()%2; }
   next() { if (this.slides.length) this.go((this.index() + 1) % this.slides.length); }
   previous() { if (this.slides.length) this.go((this.index() + this.slides.length - 1) % this.slides.length); }
   togglePause() { this.paused = !this.paused; }

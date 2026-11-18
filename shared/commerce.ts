@@ -4,7 +4,8 @@ export interface StorefrontCollection extends Collection { products:Product[]; }
 export interface HomeTarget { type:'catalog'|'category'|'collection'|'collections'; id?:string; }
 export interface HomeLink { label:string; target:HomeTarget; }
 export interface HomeSlideContent { eyebrow:string; title:string; description:string; heroAssetId:string|null; mobileAssetId?:string|null; heroAlt:string; frameX:number; frameY:number; primary:HomeLink; secondary:HomeLink|null; enabled:boolean; }
-export interface HomeContent extends Omit<HomeSlideContent,'enabled'> { shortcuts:HomeLink[]; slides?:HomeSlideContent[]; }
+export type HomeSlideTransition = 'FADE' | 'SLIDE' | 'ZOOM';
+export interface HomeContent extends Omit<HomeSlideContent,'enabled'> { shortcuts:HomeLink[]; slides?:HomeSlideContent[]; slideIntervalSeconds?:number|null; slideTransition?:HomeSlideTransition|null; }
 export interface HomeSlidePayload { content:HomeSlideContent; heroMedia?:ProductMedia|null; mobileMedia?:ProductMedia|null; }
 export interface StorefrontHome { revisionId:string; content:HomeContent; heroMedia?:ProductMedia|null; slides?:HomeSlidePayload[]; }
 export interface HomeAdmin { version:number; draft:HomeContent|null; published:HomeContent|null; publishedAt?:string|null; publishedRevisionId?:string|null; draftMedia?:ProductMedia|null; publishedMedia?:ProductMedia|null; draftSlides?:HomeSlidePayload[]; publishedSlides?:HomeSlidePayload[]; }
