@@ -33,10 +33,23 @@
     <div class="mobile-nav-head"><img src="/blessrom-logo.webp" alt="Blessrom" width="170" height="58"><button type="button" (click)="menuOpen.set(false)" aria-label="Cerrar menú">×</button></div>
     <a routerLink="/catalogo" [queryParams]="{sort:'newest'}">Novedades</a><a routerLink="/catalogo">Todo el catálogo</a>
     @if (categories().length) {
-      <details name="storefront-navigation" #categoryMenu (mouseenter)="openDesktopMenu(categoryMenu)" (mouseleave)="closeDesktopMenu(categoryMenu)">
+      <details class="category-menu" name="storefront-navigation" #categoryMenu (mouseenter)="openDesktopMenu(categoryMenu)" (mouseleave)="closeDesktopMenu(categoryMenu)">
         <summary>Categorías</summary>
-        <div class="nav-panel">
+        <div class="nav-panel mobile-category-panel">
           <ng-container [ngTemplateOutlet]="categoryNodes" [ngTemplateOutletContext]="{$implicit: categoryTree()}" />
+        </div>
+        <div class="nav-panel mega-panel">
+          @for(node of categoryTree();track node.category.id){
+            <section class="mega-column">
+              <a class="mega-heading" [routerLink]="['/categoria',node.category.slug]" (click)="categoryMenu.open=false">{{node.category.name}}</a>
+              @for(child of node.children;track child.category.id){
+                <a class="mega-link" [routerLink]="['/categoria',child.category.slug]" (click)="categoryMenu.open=false">{{child.category.name}}</a>
+                @for(grandchild of child.children;track grandchild.category.id){
+                  <a class="mega-link nested" [routerLink]="['/categoria',grandchild.category.slug]" (click)="categoryMenu.open=false">{{grandchild.category.name}}</a>
+                }
+              }
+            </section>
+          }
         </div>
         <ng-template #categoryNodes let-nodes>
           @for (node of nodes; track node.category.id) {
