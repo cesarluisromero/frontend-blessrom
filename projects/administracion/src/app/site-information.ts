@@ -12,7 +12,9 @@ type Section = (typeof SITE_PAGE_KEYS)[number] | 'contacto' | 'pie';
   <p>Edita cada página. La tienda cambia únicamente cuando publiques el borrador.</p>
   @if(error()){<p role="alert" class="error">{{error()}}</p>}
   @if(notice()){<p role="status" class="notice">{{notice()}}</p>}
-  @if(draft; as content){
+  @if(loading()){<p role="status">Cargando páginas…</p>}
+  @if(error() && !loading() && !draft()){<button type="button" (click)="load()">Reintentar carga</button>}
+  @if(draft(); as content){
     <div class="layout">
       <nav class="sections" aria-label="Páginas editables">
         <h2>Empresa</h2>
@@ -51,15 +53,16 @@ type Section = (typeof SITE_PAGE_KEYS)[number] | 'contacto' | 'pie';
 `]})
 export class SiteInformationEditor {
   private readonly http=inject(HttpClient);
-  readonly busy=signal(false);readonly error=signal('');readonly notice=signal('');readonly saved=signal(false);
+  readonly busy=signal(false);readonly loading=signal(true);readonly error=signal('');readonly notice=signal('');readonly saved=signal(false);
+  readonly draft=signal<SiteInformation|null>(null);
   readonly selected=signal<Section>('quienes-somos');
   readonly pageKeys=SITE_PAGE_KEYS;
   readonly legalKeys=SITE_PAGE_KEYS.filter(key=>key!=='quienes-somos');
   readonly pageLabels:Record<(typeof SITE_PAGE_KEYS)[number],string>={'quienes-somos':'Quiénes somos','privacidad':'Privacidad','terminos':'Términos','eliminar-datos':'Eliminar datos'};
-  draft:SiteInformation|null=null;version=0;
+  version=0;
   constructor(){void this.load();}
   changed(){this.saved.set(false);this.notice.set('');}
-  async load(){try{const data=await firstValueFrom(this.http.get<SiteInformationAdmin>('/api/v1/site-information/admin'));this.version=data.version;this.draft=structuredClone(data.draft);this.draft.contactBody ??='';this.saved.set(true);}catch{this.error.set('No se pudo cargar el contenido.');}}
-  async save(){if(!this.draft||this.busy())return;this.busy.set(true);this.error.set('');try{const data=await firstValueFrom(this.http.put<SiteInformationAdmin>('/api/v1/site-information/admin/draft',{version:this.version,content:this.draft}));this.version=data.version;this.saved.set(true);this.notice.set('Borrador guardado. La tienda todavía muestra el contenido publicado.');}catch(e){this.saved.set(false);this.error.set((e as {status?:number}).status===409?'Otro administrador cambió el contenido. Tus cambios siguen en el formulario.':'No se pudo guardar el borrador.');}finally{this.busy.set(false);}}
+  async load(){this.loading.set(true);this.error.set('');try{const data=await firstValueFrom(this.http.get<SiteInformationAdmin>('/api/v1/site-information/admin'));this.version=data.version;const content=structuredClone(data.draft);content.contactBody ??='';this.draft.set(content);this.saved.set(true);}catch(e){const status=(e as {status?:number}).status;this.error.set(status===401||status===403?'No se pudo autorizar la carga. Vuelve a iniciar sesión.':status===404?'El backend todavía no ofrece este módulo. Despliega la versión actual del backend.':'No se pudieron cargar las páginas.');}finally{this.loading.set(false);}}
+  async save(){const content=this.draft();if(!content||this.busy())return;this.busy.set(true);this.error.set('');try{const data=await firstValueFrom(this.http.put<SiteInformationAdmin>('/api/v1/site-information/admin/draft',{version:this.version,content}));this.version=data.version;this.saved.set(true);this.notice.set('Borrador guardado. La tienda todavía muestra el contenido publicado.');}catch(e){this.saved.set(false);this.error.set((e as {status?:number}).status===409?'Otro administrador cambió el contenido. Tus cambios siguen en el formulario.':'No se pudo guardar el borrador.');}finally{this.busy.set(false);}}
   async publish(){if(this.busy()||!this.saved())return;this.busy.set(true);this.error.set('');try{const data=await firstValueFrom(this.http.post<SiteInformationAdmin>('/api/v1/site-information/admin/publish',{version:this.version}));this.version=data.version;this.notice.set('Páginas publicadas en la tienda.');}catch(e){this.error.set((e as {status?:number}).status===409?'Otro administrador cambió el contenido. Tus cambios siguen en el formulario.':'No se pudo publicar.');}finally{this.busy.set(false);}}
 }
