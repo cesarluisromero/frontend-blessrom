@@ -9,7 +9,7 @@ import { ProductCard } from './product-card';
  @if(coverDesktop();as desktop){<section class="visual" [attr.aria-label]="section.title">
   <h2 class="sr-only">{{section.title}}</h2>
   <picture>@if(coverMobile();as mobile){<source media="(max-width:650px)" [srcset]="mobile">}<img [src]="desktop" [alt]="section.desktopMedia?.alt_text || section.title" loading="lazy" width="2160" height="720"></picture>
-  <a class="visual-cta" [routerLink]="sectionLink()">{{section.kind==='CATEGORY'?'Ver categoría':'Ver colección'}} <span aria-hidden="true">↗</span></a>
+  <a class="visual-cta" [routerLink]="sectionLink()">{{section.ctaLabel?.trim() || (section.kind==='CATEGORY'?'Ver categoría':'Ver colección')}} <span aria-hidden="true">↗</span></a>
  </section>}
 } @else {
  <section class="products-section" [attr.aria-label]="section.title" (mouseenter)="paused=true" (mouseleave)="paused=false" (focusin)="paused=true" (focusout)="paused=false">
