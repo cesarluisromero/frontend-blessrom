@@ -1,4 +1,5 @@
 @use '../../../shared/theme';
-@media (max-width: 650px) {
-  html, body { max-width: 100%; overflow-x: clip; }
-}
+
+// Keep horizontal scrolling inside carousels, never on the storefront viewport.
+html { overflow-x: hidden; }
+body { width: 100%; max-width: 100%; overflow-x: clip; }
