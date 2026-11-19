@@ -38,7 +38,7 @@
         <div class="nav-panel mobile-category-panel">
           @for (group of displayMenuGroups(); track group.id) {
             <div class="category-group" [class.expanded]="expandedCategories().has(group.id)">
-              <div class="category-row"><span class="menu-group-title">{{group.title}}</span><button type="button" [attr.aria-label]="(expandedCategories().has(group.id) ? 'Ocultar' : 'Mostrar')+' categorías de '+group.title" [attr.aria-expanded]="expandedCategories().has(group.id)" (click)="toggleCategory(group.id)">{{expandedCategories().has(group.id) ? '−' : '+'}}</button></div>
+              <div class="category-row"><button class="menu-group-toggle" type="button" [attr.aria-label]="(expandedCategories().has(group.id) ? 'Ocultar' : 'Mostrar')+' categorías de '+group.title" [attr.aria-expanded]="expandedCategories().has(group.id)" (click)="toggleCategory(group.id)"><span class="menu-group-title">{{group.title}}</span><span aria-hidden="true">{{expandedCategories().has(group.id) ? '−' : '+'}}</span></button></div>
               <div class="category-children">@for (category of group.categories; track category.id) {<a [routerLink]="['/categoria',category.slug]" (click)="closeNavigationMenus()">{{category.name}}</a>}</div>
             </div>
           }
