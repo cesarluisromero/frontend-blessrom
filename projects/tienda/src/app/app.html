@@ -32,38 +32,25 @@
   <nav id="storefront-nav" aria-label="Navegación principal" [class.open]="menuOpen()" (keydown.escape)="menuOpen.set(false)" (mouseleave)="closeDesktopNavigation()">
     <div class="mobile-nav-head"><img src="/blessrom-logo.webp" alt="Blessrom" width="170" height="58"><button type="button" (click)="menuOpen.set(false)" aria-label="Cerrar menú">×</button></div>
     <a routerLink="/catalogo" [queryParams]="{sort:'newest'}" (click)="closeNavigationMenus()">Novedades</a><a routerLink="/catalogo" (click)="closeNavigationMenus()">Todo el catálogo</a>
-    @if (categories().length) {
+    @if (displayMenuGroups().length) {
       <details class="category-menu" name="storefront-navigation" #categoryMenu (mouseenter)="openDesktopMenu(categoryMenu)">
         <summary>Categorías</summary>
         <div class="nav-panel mobile-category-panel">
-          <ng-container [ngTemplateOutlet]="categoryNodes" [ngTemplateOutletContext]="{$implicit: categoryTree()}" />
+          @for (group of displayMenuGroups(); track group.id) {
+            <div class="category-group" [class.expanded]="expandedCategories().has(group.id)">
+              <div class="category-row"><span class="menu-group-title">{{group.title}}</span><button type="button" [attr.aria-label]="(expandedCategories().has(group.id) ? 'Ocultar' : 'Mostrar')+' categorías de '+group.title" [attr.aria-expanded]="expandedCategories().has(group.id)" (click)="toggleCategory(group.id)">{{expandedCategories().has(group.id) ? '−' : '+'}}</button></div>
+              <div class="category-children">@for (category of group.categories; track category.id) {<a [routerLink]="['/categoria',category.slug]" (click)="closeNavigationMenus()">{{category.name}}</a>}</div>
+            </div>
+          }
         </div>
         <div class="nav-panel mega-panel">
-          @for(node of categoryTree();track node.category.id){
+          @for(group of displayMenuGroups();track group.id){
             <section class="mega-column">
-              <a class="mega-heading" [routerLink]="['/categoria',node.category.slug]" (click)="categoryMenu.open=false">{{node.category.name}}</a>
-              @for(child of node.children;track child.category.id){
-                <a class="mega-link" [routerLink]="['/categoria',child.category.slug]" (click)="categoryMenu.open=false">{{child.category.name}}</a>
-                @for(grandchild of child.children;track grandchild.category.id){
-                  <a class="mega-link nested" [routerLink]="['/categoria',grandchild.category.slug]" (click)="categoryMenu.open=false">{{grandchild.category.name}}</a>
-                }
-              }
+              <strong class="mega-heading">{{group.title}}</strong>
+              @for(category of group.categories;track category.id){<a class="mega-link" [routerLink]="['/categoria',category.slug]" (click)="closeNavigationMenus()">{{category.name}}</a>}
             </section>
           }
         </div>
-        <ng-template #categoryNodes let-nodes>
-          @for (node of nodes; track node.category.id) {
-            <div class="category-group" [class.expanded]="expandedCategories().has(node.category.id)">
-              <div class="category-row"><a [routerLink]="['/categoria', node.category.slug]" (click)="categoryMenu.open = false; menuOpen.set(false)">{{node.category.name}}</a>
-              @if(node.children.length){<button type="button" [attr.aria-label]="(expandedCategories().has(node.category.id) ? 'Ocultar' : 'Mostrar')+' subcategorías de '+node.category.name" [attr.aria-expanded]="expandedCategories().has(node.category.id)" (click)="toggleCategory(node.category.id)">{{expandedCategories().has(node.category.id) ? '−' : '+'}}</button>}</div>
-              @if (node.children.length) {
-                <div class="category-children">
-                  <ng-container [ngTemplateOutlet]="categoryNodes" [ngTemplateOutletContext]="{$implicit: node.children}" />
-                </div>
-              }
-            </div>
-          }
-        </ng-template>
       </details>
     }
     @if (collections().length) {

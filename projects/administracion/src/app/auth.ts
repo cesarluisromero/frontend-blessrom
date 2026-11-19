@@ -32,7 +32,7 @@ export const adminGuard:CanActivateFn=()=>inject(AuthService).admin() || inject(
 export const authInterceptor:HttpInterceptorFn=(req,next)=>{
  // Never attach credentials to image hosts, the identity provider or arbitrary URLs.
  const protectedPath=req.url.startsWith('/api/v1/admin/') ||
-  /^\/api\/v1\/(?:home-sections|site-information)\/admin(?:\/|$)/.test(req.url);
+  /^\/api\/v1\/(?:home-sections|site-information|storefront-menu)\/admin(?:\/|$)/.test(req.url);
  if(!protectedPath) return next(req);
  return from(inject(AuthService).accessToken()).pipe(switchMap(token=>next(req.clone({setHeaders:{Authorization:'Bearer '+token}}))));
 };

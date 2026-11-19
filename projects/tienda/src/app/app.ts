@@ -1,5 +1,4 @@
 import { Component, DestroyRef, computed, signal, inject } from '@angular/core';
-import { NgTemplateOutlet } from '@angular/common';
 import { NavigationEnd, Router, RouterLink, RouterOutlet } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
@@ -25,7 +24,7 @@ type SearchSuggestionsResponse = { items: SearchSuggestion[] };
 type CategoryNode = { category: Category; children: CategoryNode[] };
 @Component({
   selector: 'app-root',
-  imports: [RouterLink, RouterOutlet, FormsModule, NgTemplateOutlet],
+  imports: [RouterLink, RouterOutlet, FormsModule],
   templateUrl: './app.html',
   styleUrl: './app.scss',
 })
@@ -47,6 +46,12 @@ export class App {
       else roots.push(node);
     }
     return roots;
+  });
+  readonly displayMenuGroups = computed(() => {
+    const configured = this.storefront.menuGroups();
+    const byId = new Map(this.categories().map(category => [category.id, category]));
+    if (configured !== null) return configured.map(group => ({id:group.id,title:group.title,categories:group.categoryIds.map(id => byId.get(id)).filter((category):category is Category => !!category)})).filter(group => group.categories.length);
+    return this.categoryTree().map(node => ({id:node.category.id,title:node.category.name,categories:[node.category,...node.children.map(child => child.category)]}));
   });
   readonly collections = this.storefront.collections;
   readonly transactional = signal(false);

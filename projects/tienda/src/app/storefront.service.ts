@@ -1,6 +1,7 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Category, Collection, Storefront } from '../../../../shared/commerce';
+import { MenuGroup } from '../../../../shared/storefront-menu';
 
 @Injectable({ providedIn: 'root' })
 export class StorefrontService {
@@ -8,11 +9,13 @@ export class StorefrontService {
   readonly data = signal<Storefront | null>(null);
   readonly categories = signal<Category[]>([]);
   readonly collections = signal<Collection[]>([]);
+  readonly menuGroups = signal<MenuGroup[] | null>(null);
   readonly error = signal(false);
   constructor() {
     this.reload();
     this.http.get<Category[]>('/api/v1/categories').subscribe({ next: value => this.categories.set(value), error: () => {} });
     this.http.get<Collection[]>('/api/v1/collections').subscribe({ next: value => this.collections.set(value), error: () => {} });
+    this.http.get<MenuGroup[]>('/api/v1/storefront-menu').subscribe({ next: value => this.menuGroups.set(value), error: () => {} });
   }
   reload() {
     this.error.set(false);
