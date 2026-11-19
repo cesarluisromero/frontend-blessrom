@@ -88,8 +88,10 @@ export class App {
     menu.open = true;
   }
 
-  closeDesktopMenu(menu:HTMLDetailsElement) {
-    if (matchMedia('(hover: hover) and (min-width: 601px)').matches) menu.open = false;
+  closeDesktopNavigation(event:MouseEvent) {
+    if (!matchMedia('(hover: hover) and (min-width: 601px)').matches) return;
+    const nav=event.currentTarget as HTMLElement;
+    nav.querySelectorAll<HTMLDetailsElement>('details[name="storefront-navigation"]').forEach(menu=>menu.open=false);
   }
 
   constructor() {
