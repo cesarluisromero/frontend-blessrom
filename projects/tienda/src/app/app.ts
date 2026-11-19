@@ -88,10 +88,14 @@ export class App {
     menu.open = true;
   }
 
-  closeDesktopNavigation(event:MouseEvent) {
+  closeDesktopNavigation() {
     if (!matchMedia('(hover: hover) and (min-width: 601px)').matches) return;
-    const nav=event.currentTarget as HTMLElement;
-    nav.querySelectorAll<HTMLDetailsElement>('details[name="storefront-navigation"]').forEach(menu=>menu.open=false);
+    this.closeNavigationMenus();
+  }
+
+  closeNavigationMenus() {
+    this.menuOpen.set(false);
+    document.getElementById('storefront-nav')?.querySelectorAll<HTMLDetailsElement>('details[name="storefront-navigation"]').forEach(menu=>menu.open=false);
   }
 
   constructor() {
@@ -107,7 +111,7 @@ export class App {
       if (this.searchTerm.trim().length >= 2) this.suggestionsOpen.set(true);
     });
     this.router.events.pipe(filter(event => event instanceof NavigationEnd)).subscribe(() => {
-      this.menuOpen.set(false);
+      this.closeNavigationMenus();
       this.expandedCategories.set(new Set());
       this.chatOpen.set(false);
       this.transactional.set(/^\/(carrito|checkout|pedido)(\/|$)/.test(this.router.url));
