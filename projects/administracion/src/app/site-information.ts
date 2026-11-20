@@ -61,6 +61,7 @@ type Section = (typeof SITE_PAGE_KEYS)[number] | 'contacto' | 'pie' | 'libro';
             <button type="button" class="secondary link-action" (click)="insertLink(pageEditor,'page')">Insertar enlace en el texto seleccionado</button>
             <p class="hint">Separa los párrafos con saltos de línea. Revisa el contenido legal antes de publicarlo.</p>
             <a class="preview-link" [href]="'https://blessrom.com/informacion/'+key" target="_blank" rel="noopener noreferrer">Ver página publicada ↗</a>
+            @if(key==='eliminar-datos'){<p><a class="preview-link" routerLink="/paginas/solicitudes-de-datos">Ver solicitudes recibidas →</a></p>}
           }}
         }
       </section>

@@ -13,6 +13,7 @@ export const routes:Routes=[
  {path:'promociones',canActivate:[adminGuard],loadComponent:()=>import('./promotions').then(m=>m.Promotions),title:'Promociones | Blessrom'},
  {path:'paginas',canActivate:[adminGuard],loadComponent:()=>import('./site-information').then(m=>m.SiteInformationEditor),title:'Páginas y pie de página | Blessrom'},
  {path:'paginas/reclamaciones',canActivate:[adminGuard],loadComponent:()=>import('./complaints-inbox').then(m=>m.ComplaintsInbox),title:'Hojas de reclamación | Blessrom'},
+ {path:'paginas/solicitudes-de-datos',canActivate:[adminGuard],loadComponent:()=>import('./data-deletion-inbox').then(m=>m.DataDeletionInbox),title:'Solicitudes de datos | Blessrom'},
  {path:'menu',canActivate:[adminGuard],loadComponent:()=>import('./menu-editor').then(m=>m.MenuEditor),title:'Configurar menú | Blessrom'},
  {path:'contenido',redirectTo:'paginas'},
  {path:'inicio/secciones',canActivate:[adminGuard],loadComponent:()=>import('./home-sections').then(m=>m.HomeSectionsEditor),title:'Secciones del inicio | Blessrom'},
