@@ -3,11 +3,12 @@ import { HttpClient } from '@angular/common/http';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { SiteInformation, SITE_PAGE_KEYS } from '../../../../shared/site-information';
+import { LinkedText } from '../../../../shared/linked-text';
 
 @Component({
-  selector: 'app-site-page', imports: [RouterLink],
+  selector: 'app-site-page', imports: [RouterLink, LinkedText],
   template: `<main class="page"><a routerLink="/">Inicio</a><article>@if (page(); as content) {
-    <h1>{{content.title}}</h1><p class="body">{{content.body || 'Contenido pendiente de publicación.'}}</p>
+    <h1>{{content.title}}</h1><p class="body"><app-linked-text [text]="content.body || 'Contenido pendiente de publicación.'" /></p>
   } @else if (error()) { <p role="alert">{{error()}}</p> }</article></main>`,
   styles: [`.page{max-width:850px;margin:0 auto;padding:48px 24px 96px;min-height:55vh}.page>a{color:#a46e2d}.page h1{font:clamp(2rem,5vw,3.5rem) Georgia,serif;color:#14243e}.body{white-space:pre-wrap;line-height:1.8;font-size:1.05rem;color:#24344d}`]
 })

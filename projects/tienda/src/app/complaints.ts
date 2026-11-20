@@ -4,16 +4,17 @@ import { HttpClient } from '@angular/common/http';
 import { RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { ComplaintSettings, SiteInformation } from '../../../../shared/site-information';
+import { LinkedText } from '../../../../shared/linked-text';
 
 type Receipt={number:string;createdAt:string;receipt:string};
 
-@Component({selector:'app-complaints',imports:[FormsModule,RouterLink],template:`
+@Component({selector:'app-complaints',imports:[FormsModule,RouterLink,LinkedText],template:`
 <main class="complaints"><a routerLink="/">Inicio</a><h1>{{settings()?.title||'Libro de Reclamaciones Virtual'}}</h1>
 @if(loading()){<p>Cargando formulario…</p>}
 @else if(!settings()?.enabled){<p role="alert">{{error()||'El Libro de Reclamaciones no está disponible en este momento. Comunícate con Blessrom desde la página de contacto.'}}</p><a routerLink="/contacto">Ir a Contacto</a>}
 @else if(receipt();as saved){<section class="receipt" role="status"><h2>Hoja registrada: {{saved.number}}</h2><p>Fecha: {{saved.createdAt}}</p><p>Guarda este número y descarga o imprime la constancia. Si el correo está habilitado, también recibirás una copia.</p><pre>{{saved.receipt}}</pre><button type="button" (click)="print()">Imprimir o guardar PDF</button></section>}
 @else{
-<p class="intro">{{settings()?.intro}}</p><p><strong>Proveedor:</strong> {{settings()?.businessName}} · RUC {{settings()?.ruc}}<br>{{settings()?.address}}</p>
+<p class="intro"><app-linked-text [text]="settings()?.intro || ''" /></p><p><strong>Proveedor:</strong> {{settings()?.businessName}} · RUC {{settings()?.ruc}}<br>{{settings()?.address}}</p>
 <p>Los campos con * son obligatorios. Recibirás respuesta en un plazo máximo de 15 días hábiles.</p>
 @if(error()){<p class="error" role="alert">{{error()}}</p>}
 <form #claimForm="ngForm" (ngSubmit)="submit(claimForm)">
