@@ -13,5 +13,6 @@ export const routes:Routes=[
  {path:'cuenta/pedidos/:id',canActivate:[accountGuard],loadComponent:()=>import('./account-order').then(m=>m.AccountOrderPage),title:'Mi pedido | Blessrom'},
  {path:'informacion/:slug',loadComponent:()=>import('./site-page').then(m=>m.SitePageComponent),title:'Información | Blessrom'},
  {path:'contacto',loadComponent:()=>import('./site-page').then(m=>m.SitePageComponent),data:{contact:true},title:'Contacto | Blessrom'},
+ {path:'libro-de-reclamaciones',loadComponent:()=>import('./complaints').then(m=>m.ComplaintsPage),title:'Libro de Reclamaciones | Blessrom'},
  {path:'**',redirectTo:''}
 ];

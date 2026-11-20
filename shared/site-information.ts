@@ -1,8 +1,10 @@
 export interface SitePage { title: string; body: string }
+export interface ComplaintSettings { enabled: boolean; title: string; intro: string; businessName: string; ruc: string; address: string; email: string }
 export interface SiteInformation {
   address: string;
   phones: string[];
   contactBody?: string;
+  complaints?: ComplaintSettings;
   pages: Record<'quienes-somos' | 'privacidad' | 'terminos' | 'eliminar-datos', SitePage>;
 }
 export interface SiteInformationAdmin { version: number; draft: SiteInformation; published: SiteInformation }
