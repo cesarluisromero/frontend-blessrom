@@ -135,6 +135,15 @@ export class Products {
    const colors=variants.flatMap(v=>Object.entries(v.attributes).filter(([key,value])=>key.toLowerCase()==='color'&&value).map(([,value])=>value));
    return [...new Set(image.color_value?[...colors,image.color_value]:colors)];
  }
+ mediaVariants(image:MediaAsset) {
+   const product=this.selected();
+   const variants=[...(product?.draft?.variants??[]),...(product?.published?.variants??[])];
+   return [...new Map(variants.filter(v=>v.sku&&(!image.color_value||Object.entries(v.attributes).some(([key,value])=>key.toLowerCase()==='color'&&value===image.color_value))).map(v=>[v.sku,v])).values()];
+ }
+ async saveMediaVariant(image:MediaAsset,variantSku:string) {
+   const product=this.selected();if(!product||variantSku===(image.variant_sku??''))return;
+   await this.run(async()=>{await firstValueFrom(this.http.put('/api/v1/admin/products/'+product.id+'/media/'+image.id,{variantSku}));await this.loadMedia(product.id);this.notice.set('Presentación de la imagen guardada.');});
+ }
  async saveMediaColor(image:MediaAsset,colorValue:string) {
    const product=this.selected();
    if(!product||colorValue===(image.color_value??''))return;
